@@ -1,0 +1,23 @@
+language: node_js
+sudo: true
+
+node_js:
+  - "9"
+  - "8"
+  - "6"
+
+script:
+  - npm install
+  - npm run test
+
+before_script:
+  # install nats
+  - wget https://github.com/nats-io/nats-streaming-server/releases/download/v0.7.0/nats-streaming-server-v0.7.0-linux-amd64.zip -O tmp.zip
+  - unzip tmp.zip
+  - mv nats-streaming-server-v0.7.0-linux-amd64 nats-streaming-server
+  - mkdir nats-streaming-server/logs
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always

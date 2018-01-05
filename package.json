@@ -1,0 +1,42 @@
+{
+  "name": "hemera-nats-streaming",
+  "version": "2.0.1",
+  "description": "This is a plugin to use NATS-Streaming with Hemera",
+  "main": "index.js",
+  "repository": {
+    "url": "git@github.com:hemerajs/hemera-nats-streaming.git",
+    "type": "git"
+  },
+  "keywords": [
+    "nats-streaming",
+    "hemera"
+  ],
+  "scripts": {
+    "lint": "eslint ./**/*.js",
+    "test": "nyc mocha -t 5000 --exit ./test/**/*.js",
+    "coverage": "npm run test && nyc report --reporter=html",
+    "patch": "np patch --yolo",
+    "minor": "np minor --yolo",
+    "major": "np major --yolo"
+  },
+  "author": "Dustin Deus (https://github.com/StarpTech)",
+  "license": "MIT",
+  "dependencies": {
+    "hemera-joi": "^3.0.1",
+    "hemera-plugin": "^0.1.1",
+    "node-nats-streaming": "0.0.x"
+  },
+  "devDependencies": {
+    "code": "^3.0.2",
+    "eslint": "^4.14.0",
+    "eslint-config-hemera": "0.0.2",
+    "hemera-testsuite": "^2.0.5",
+    "mocha": "^4.1.0",
+    "nats": "^0.7.24",
+    "nats-hemera": "^3.1.6",
+    "np": "^2.18.3",
+    "nuid": "^0.6.14",
+    "nyc": "^11.4.1",
+    "prettier": "^1.9.2"
+  }
+}
