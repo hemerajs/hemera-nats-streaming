@@ -3,10 +3,6 @@
 [![npm](https://img.shields.io/npm/v/hemera-nats-streaming.svg?maxAge=3600)](https://www.npmjs.com/package/hemera-nats-streaming)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](#badge)
 
-<p align="center">
-<img src="https://github.com/StarpTech/hemera/raw/master/packages/hemera-nats-streaming/media/nats-streaming.png" alt="nats-streaming" style="max-width:100%;">
-</p>
-
 This is a plugin to use [NATS-Streaming](http://nats.io/) with Hemera.
 We use the official [Node-nats-streaming](https://github.com/nats-io/node-nats-streaming) client.
 Since nats-streaming based on NATS Server you are able to run both technologies with one NATS-streaming-server.
@@ -28,11 +24,8 @@ We provide a simple interface to work with nats-streaming
 hemera.act({
   topic: 'nats-streaming',
   cmd: 'publish',
-  subject: '<subject>',
-  (err, resp) => {
-    // ...
-  }
-)
+  subject: '<subject>'
+})
 ```
 
 ## Create subscription
@@ -42,10 +35,7 @@ hemera.act({
   topic: 'nats-streaming',
   cmd: 'subscribe',
   subject: '<subject>',
-  (err, resp) => {
-    // ...
-  }
-)
+})
 ```
 
 ## Remove subscription
@@ -55,10 +45,7 @@ hemera.act({
   topic: 'nats-streaming',
   cmd: 'unsubscribe',
   subject: '<subject>',
-  (err, resp) => {
-    // ...
-  }
-)
+})
 ```
 
 ## Suspending
@@ -68,23 +55,18 @@ hemera.act({
   topic: 'nats-streaming',
   cmd: 'suspend',
   subject: '<subject>',
-  (err, resp) => {
-    // ...
-  }
-)
+})
 ```
 
 ## Subscribing
-Create a NATS subscription to listen on NATS-Streaming events. You have to call the callback handler to acknowledge the message.
+Create a NATS subscription to listen on NATS-Streaming events.
 
 ```js
 hemera.add({
   topic: 'nats-streaming.<subject>',
-  (err, reply) => {
-    // ...
-    reply() // ACK
-  }
-)
+}, async () => {
+
+})
 ```
 
 ### Why you don't implement nats-streaming in hemera?
@@ -102,6 +84,3 @@ Usually we would use RabbitMQ to ensure reliable message delivery but maintainin
 
 ### Documentation
 Look in the source code all options are well documented.
-
-### Example
-[Example](/examples/bridges/nats-streaming.js)
