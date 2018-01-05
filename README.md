@@ -65,7 +65,7 @@ Create a NATS subscription to listen on NATS-Streaming events.
 hemera.add({
   topic: 'nats-streaming.<subject>',
 }, async () => {
-
+  //... throw or resolve to represent the operation state
 })
 ```
 
