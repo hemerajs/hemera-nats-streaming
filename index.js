@@ -60,6 +60,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
             `Message could not be stringified. Subject "${req.subject}"`
           ).cause(result.error)
           this.log.error(error)
+          reply(error)
         } else {
           stan.publish(req.subject, result.value, handler)
         }
@@ -115,9 +116,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
         const sub = stan.subscribe(req.subject, req.queue, opts)
         subList[req.subject] = sub
 
-        // signal that subscription was created
-        reply(null, { created: true, subject: req.subject, opts })
-
         sub.on('message', msg => {
           const result = SafeParse(msg.getData())
           const inboxChannel = topic + '.' + req.subject
@@ -150,6 +148,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
             )
           }
         })
+
+        // signal that subscription was created
+        reply(null, { created: true, subject: req.subject, opts })
       }
     )
 
