@@ -12,7 +12,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
   const ParsingError = hemera.createError('ParsingError')
   const NotAvailableError = hemera.createError('NotAvailable')
   const stan = Nats.connect(opts.clusterId, opts.clientId, opts.opts)
-  const subList = {}
+  const subList = new Map()
 
   hemera.decorate('natsStreaming', {
     errors: {
@@ -93,7 +93,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
       },
       function(req, reply) {
         // avoid multiple subscribers for the same subject
-        if (subList[req.subject]) {
+        if (subList.has(req.subject)) {
           reply(
             new DuplicateSubscriberError(
               `Subscription for subject "${req.subject}" is already active`
@@ -114,7 +114,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         this.log.debug(opts, 'Subscription options')
 
         const sub = stan.subscribe(req.subject, req.queue, opts)
-        subList[req.subject] = sub
+        subList.set(req.subject, sub)
 
         sub.on('message', msg => {
           const result = SafeParse(msg.getData())
@@ -165,9 +165,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
         subject: Joi.string().required()
       },
       function(req, reply) {
-        if (subList[req.subject]) {
-          subList[req.subject].close()
-          delete subList[req.subject]
+        if (subList.has(req.subject)) {
+          subList.get(req.subject).close()
+          delete subList.delete(req.subject)
           reply(null, true)
         } else {
           reply(
@@ -189,9 +189,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
         subject: Joi.string().required()
       },
       function(req, reply) {
-        if (subList[req.subject]) {
-          subList[req.subject].unsubscribe()
-          delete subList[req.subject]
+        if (subList.has(req.subject)) {
+          subList.get(req.subject).unsubscribe()
+          delete subList.delete(req.subject)
           reply(null, true)
         } else {
           reply(
