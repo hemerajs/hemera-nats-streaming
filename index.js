@@ -167,7 +167,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
       function(req, reply) {
         if (subList.has(req.subject)) {
           subList.get(req.subject).close()
-          delete subList.delete(req.subject)
+          subList.delete(req.subject)
           reply(null, true)
         } else {
           reply(
@@ -191,7 +191,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
       function(req, reply) {
         if (subList.has(req.subject)) {
           subList.get(req.subject).unsubscribe()
-          delete subList.delete(req.subject)
+          subList.delete(req.subject)
           reply(null, true)
         } else {
           reply(
