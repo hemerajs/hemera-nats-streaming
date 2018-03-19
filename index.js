@@ -45,14 +45,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
         data: Joi.alternatives().try(Joi.object(), Joi.array())
       },
       function(req, reply) {
-        function handler(err, guid) {
-          if (err) {
-            reply(err)
-          } else {
-            reply(null, guid)
-          }
-        }
-
         const result = SafeStringify(req.data)
 
         if (result.error) {
@@ -62,7 +54,16 @@ function hemeraNatsStreaming(hemera, opts, done) {
           this.log.error(error)
           reply(error)
         } else {
-          stan.publish(req.subject, result.value, handler)
+          stan.publish(req.subject, result.value, function publishHandler(
+            err,
+            guid
+          ) {
+            if (err) {
+              reply(err)
+            } else {
+              reply(null, guid)
+            }
+          })
         }
       }
     )
@@ -208,13 +209,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
 }
 
 const plugin = Hp(hemeraNatsStreaming, {
-  hemera: '>=3',
+  hemera: '>=5.0.0-rc.1',
   name: require('./package.json').name,
-  depdendencies: ['hemera-joi'],
-  options: {
-    payloadValidator: 'hemera-joi',
-    opts: {} // object with NATS/STAN options
-  }
+  depdendencies: ['hemera-joi']
 })
 
 module.exports = plugin
