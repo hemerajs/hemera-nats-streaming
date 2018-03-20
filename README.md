@@ -20,7 +20,7 @@ npm i hemera-nats-streaming --save
 We provide a simple interface to work with nats-streaming
 
 ## Create
-Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics.. If you create a subscription on subject `test` you will receive all messages on topic `nats-streaming.test` in hemera. Returns an object with `subject`, `created` and `opts`.
+Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `test` you will receive all messages on topic `nats-streaming.test` in hemera. Returns an object with `subject`, `created` and `opts`.
 ```js
 hemera.act({
   topic: 'nats-streaming',
