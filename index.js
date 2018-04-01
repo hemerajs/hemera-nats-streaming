@@ -50,7 +50,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         if (result.error) {
           const error = new ParsingError(
             `Message could not be stringified. Subject "${req.subject}"`
-          ).cause(result.error)
+          ).causedBy(result.error)
           this.log.error(error)
           reply(error)
         } else {
@@ -124,7 +124,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
           if (result.error) {
             const error = new ParsingError(
               `Message could not be parsed as JSON. Subject "${req.subject}"`
-            ).cause(result.error)
+            ).causedBy(result.error)
             this.log.error(error)
           } else {
             const data = {
