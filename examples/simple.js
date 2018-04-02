@@ -17,37 +17,43 @@ hemera.use(hemeraNatsStreaming, {
   opts: {} // object with NATS/STAN options
 })
 
+const topic = 'natss'
+
 hemera.ready(() => {
   /**
    * Create nats-streaming-subscription
    */
   hemera.act(
     {
-      topic: 'nats-streaming',
+      topic,
       cmd: 'subscribe',
-      subject: 'orderCreated',
+      subject: 'news',
       options: {
         setAckWait: 10000,
         setDeliverAllAvailable: true,
-        setDurableName: 'orderCreated'
+        setDurableName: 'news'
       }
     },
     function(err, resp) {
+      if (err) {
+        this.log.error(err)
+      }
       this.log.info(resp, 'ACK')
     }
   )
 
   /**
-   * Add listener for nats-streaming-events
+   * Add listener for nats-streaming events
    */
   hemera.add(
     {
-      topic: 'nats-streaming.orderCreated'
+      topic: `${topic}.news`
     },
     function(req, reply) {
       this.log.info(req, 'RECEIVED')
       // ACK Message, if you pass an error the message is redelivered every 10 seconds
-      reply(/* new Error('test') */)
+      reply()
+      // reply(new Error('test'))
     }
   )
 
@@ -57,14 +63,17 @@ hemera.ready(() => {
      */
     hemera.act(
       {
-        topic: 'nats-streaming',
+        topic,
         cmd: 'publish',
-        subject: 'orderCreated',
+        subject: 'news',
         data: {
           a: 1
         }
       },
       function(err, resp) {
+        if (err) {
+          this.log.error(err)
+        }
         this.log.info(resp, 'PUBLISHED')
       }
     )

@@ -1,25 +1,21 @@
 'use strict'
 
 const Hp = require('hemera-plugin')
+// eslint-disable-next-line node/no-unpublished-require
 const SafeStringify = require('nats-hemera/lib/encoder').encode
+// eslint-disable-next-line node/no-unpublished-require
 const SafeParse = require('nats-hemera/lib/decoder').decode
 const Nats = require('node-nats-streaming')
 
 function hemeraNatsStreaming(hemera, opts, done) {
-  const topic = 'nats-streaming'
+  const topic = 'natss'
   const Joi = hemera.joi
-  const DuplicateSubscriberError = hemera.createError('DuplicateSubscriber')
   const ParsingError = hemera.createError('ParsingError')
-  const NotAvailableError = hemera.createError('NotAvailable')
   const stan = Nats.connect(opts.clusterId, opts.clientId, opts.opts)
-  const subList = new Map()
+  const subscriptions = new Map()
 
-  hemera.decorate('natsStreaming', {
-    errors: {
-      DuplicateSubscriberError,
-      ParsingError,
-      NotAvailableError
-    }
+  hemera.decorate('natss', {
+    ParsingError
   })
 
   hemera.ext('onClose', (ctx, done) => {
@@ -91,39 +87,33 @@ function hemeraNatsStreaming(hemera, opts, done) {
             setAckWait: Joi.number().integer() // if an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message (default 30 seconds)
           })
           .default()
+          .unknown(false)
       },
       function(req, reply) {
-        // avoid multiple subscribers for the same subject
-        if (subList.has(req.subject)) {
-          reply(
-            new DuplicateSubscriberError(
-              `Subscription for subject "${req.subject}" is already active`
-            )
-          )
-          return
-        }
-
         const opts = stan.subscriptionOptions()
 
-        // construct subscription options
+        // build subscription options
         for (var option in req.options) {
           if (req.options[option] !== undefined) {
             opts[option](req.options[option])
           }
         }
 
-        this.log.debug(opts, 'Subscription options')
+        this.log.debug(
+          opts,
+          `Create subscription with subject '${req.subject}'`
+        )
 
         const sub = stan.subscribe(req.subject, req.queue, opts)
-        subList.set(req.subject, sub)
+        subscriptions.set(sub.inboxSub, sub)
 
         sub.on('message', msg => {
           const result = SafeParse(msg.getData())
-          const inboxChannel = topic + '.' + req.subject
+          const hemeraTopic = topic + '.' + req.subject
 
           if (result.error) {
             const error = new ParsingError(
-              `Message could not be parsed as JSON. Subject "${req.subject}"`
+              `Message could not be parsed as JSON. Subject '${req.subject}'`
             ).causedBy(result.error)
             this.log.error(error)
           } else {
@@ -134,7 +124,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
             hemera.act(
               {
-                topic: inboxChannel,
+                topic: hemeraTopic,
                 data
               },
               function(err, resp) {
@@ -142,7 +132,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
                   msg.ack()
                 } else {
                   this.log.error(
-                    `Message could not be acknowledged. Subscription "${inboxChannel}"`
+                    `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
                   )
                 }
               }
@@ -150,57 +140,55 @@ function hemeraNatsStreaming(hemera, opts, done) {
           }
         })
 
-        // signal that subscription was created
-        reply(null, { created: true, subject: req.subject, opts })
-      }
-    )
+        const subTopic = `${topic}.subscriptions.${sub.inboxSub}`
 
-    /**
-     * Suspends durable subscription
-     * If you call `subscribe` again the subscription will be resumed
-     */
-    hemera.add(
-      {
-        topic,
-        cmd: 'suspend',
-        subject: Joi.string().required()
-      },
-      function(req, reply) {
-        if (subList.has(req.subject)) {
-          subList.get(req.subject).close()
-          subList.delete(req.subject)
-          reply(null, true)
-        } else {
-          reply(
-            new NotAvailableError(
-              `Subscription "${req.subject}" is not available`
-            )
-          )
-        }
-      }
-    )
+        /**
+         * Create a server action to suspend an active subscription
+         */
+        hemera.add(
+          {
+            topic: subTopic,
+            cmd: 'suspend'
+          },
+          function(req, reply) {
+            subscriptions.get(sub.inboxSub).close()
+            subscriptions.get(sub.inboxSub).once('closed', () => {
+              subscriptions.delete(sub.inboxSub)
+              // unsubscribe and remove patterns
+              hemera.remove(subTopic)
+              reply(null, true)
+            })
+          }
+        )
 
-    /**
-     * Unsubscribe an active subscription
-     */
-    hemera.add(
-      {
-        topic,
-        cmd: 'unsubscribe',
-        subject: Joi.string().required()
-      },
-      function(req, reply) {
-        if (subList.has(req.subject)) {
-          subList.get(req.subject).unsubscribe()
-          subList.delete(req.subject)
-          reply(null, true)
-        } else {
-          reply(
-            new NotAvailableError(
-              `Subscription "${req.subject}" is not available`
-            )
+        /**
+         * Create a server action to unsubscribe a subscription
+         */
+        hemera.add(
+          {
+            topic: subTopic,
+            cmd: 'unsubscribe'
+          },
+          function(req, reply) {
+            subscriptions.get(sub.inboxSub).unsubscribe()
+            subscriptions.get(sub.inboxSub).once('unsubscribed', () => {
+              subscriptions.delete(sub.inboxSub)
+              // unsubscribe and remove patterns
+              hemera.remove(subTopic)
+              reply(null, true)
+            })
+          }
+        )
+
+        // we don't use always the same connection so we have to ensure that the subs were created
+        hemera.transport.flush(() => {
+          this.log.debug(
+            `Force flush for subscription with subject '${
+              req.subject
+            }' and subId ${sub.inboxSub}`
           )
-        }
+          reply(null, { subject: req.subject, opts, subId: sub.inboxSub })
+        })
       }
     )
 
@@ -209,7 +197,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 }
 
 const plugin = Hp(hemeraNatsStreaming, {
-  hemera: '>=5.0.0-rc.1',
+  hemera: '^5.0.0',
   name: require('./package.json').name,
   depdendencies: ['hemera-joi']
 })
