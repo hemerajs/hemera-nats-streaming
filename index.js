@@ -9,7 +9,6 @@ const Nats = require('node-nats-streaming')
 
 function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
-  const Joi = hemera.joi
   const ParseError = hemera.createError('ParseError')
   const clientId = opts.clientId || hemera.config.name
   const stan =
@@ -38,11 +37,26 @@ function hemeraNatsStreaming(hemera, opts, done) {
     hemera.add(
       {
         topic,
-        cmd: 'publish',
-        subject: Joi.string().required(),
-        data: Joi.alternatives().try(Joi.object(), Joi.array())
+        cmd: 'publish'
       },
       function(req, reply) {
+        if (typeof req.subject !== 'string') {
+          reply(
+            new Error(
+              `Subject must be from type 'string' but got '${typeof req.subject}'`
+            )
+          )
+          return
+        }
+        if (!Array.isArray(req.data) && typeof req.data !== 'object') {
+          reply(
+            new Error(
+              `Data must be from type 'object' or 'array' but got '${typeof req.data}'`
+            )
+          )
+          return
+        }
+
         const result = SafeStringify(req.data)
 
         if (result.error) {
@@ -73,30 +87,23 @@ function hemeraNatsStreaming(hemera, opts, done) {
     hemera.add(
       {
         topic,
-        cmd: 'subscribe',
-        subject: Joi.string().required(),
-        queue: Joi.string().optional(), // queue group name
-        options: Joi.object()
-          .keys({
-            setStartWithLastReceived: Joi.boolean(), // Subscribe starting with the most recently published value
-            setDeliverAllAvailable: Joi.boolean(), // Receive all stored values in order
-            setStartAtSequence: Joi.number().integer(), // Receive all messages starting at a specific sequence number
-            setStartTime: Joi.date().iso(), // Subscribe starting at a specific time
-            setStartAtTimeDelta: Joi.number().integer(),
-            setDurableName: Joi.string(), // Create a durable subscription
-            setMaxInFlight: Joi.number().integer(), // the maximum number of outstanding acknowledgements
-            setManualAckMode: Joi.boolean().default(true),
-            setAckWait: Joi.number().integer() // if an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message (default 30 seconds)
-          })
-          .default()
-          .unknown(false)
+        cmd: 'subscribe'
       },
       function(req, reply) {
+        if (typeof req.subject !== 'string') {
+          reply(
+            new Error(
+              `Subject must be from type 'string' but got '${typeof req.subject}'`
+            )
+          )
+          return
+        }
+
         const opts = stan.subscriptionOptions()
 
         // build subscription options
-        for (var option in req.options) {
-          if (req.options[option] !== undefined) {
+        for (let option in req.options) {
+          if (req.options[option] && opts[option]) {
             opts[option](req.options[option])
           }
         }
@@ -202,8 +209,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
 const plugin = Hp(hemeraNatsStreaming, {
   hemera: '^5.0.0',
-  name: require('./package.json').name,
-  depdendencies: ['hemera-joi']
+  name: require('./package.json').name
 })
 
 module.exports = plugin

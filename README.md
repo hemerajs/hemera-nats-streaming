@@ -15,7 +15,7 @@ Since nats-streaming based on NATS Server you are able to run both technologies 
 ## Install
 
 ```
-npm i hemera-nats-streaming --save
+npm i hemera-joi hemera-nats-streaming --save
 ```
 
 ## Usage
@@ -24,8 +24,6 @@ npm i hemera-nats-streaming --save
 const hemera = new Hemera(nats, {
   logLevel: 'debug'
 })
-
-hemera.use(hemeraJoi)
 hemera.use(hemeraNatsStreaming, {
   clusterId: 'test-cluster',
   clientId: 'test-client',

@@ -36,9 +36,8 @@ describe('Hemera-nats-streaming', function() {
         timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'error'
+            logLevel: 'debug'
           })
-          hemera.use(HemeraJoi)
           hemera.use(HemeraNatsStreaming, {
             clusterId,
             clientId

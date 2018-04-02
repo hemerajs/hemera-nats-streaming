@@ -1,7 +1,6 @@
 'use strict'
 
 const Hemera = require('nats-hemera')
-const hemeraJoi = require('hemera-joi')
 const nats = require('nats').connect()
 const hemeraNatsStreaming = require('./../')
 
@@ -9,8 +8,6 @@ const hemera = new Hemera(nats, {
   logLevel: 'debug',
   childLogger: true
 })
-
-hemera.use(hemeraJoi)
 hemera.use(hemeraNatsStreaming, {
   clusterId: 'test-cluster',
   clientId: 'test-client',
