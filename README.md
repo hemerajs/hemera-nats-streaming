@@ -24,8 +24,8 @@ We provide a simple interface to work with nats-streaming
 
 Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `test` you will receive all messages on topic `natss.test` in hemera. Returns an object like:
 
-```json
-{ subject: 'news', opts /*applied options*/, subId: 5 }
+```js
+{ "subject: "news", opts /*applied options*/, "subId": 5 }
 ```
 
 ```js
