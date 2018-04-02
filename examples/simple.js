@@ -13,6 +13,7 @@ const hemera = new Hemera(nats, {
 hemera.use(hemeraJoi)
 hemera.use(hemeraNatsStreaming, {
   clusterId: 'test-cluster',
+  clientId: 'test-client',
   options: {} // NATS/STAN options
 })
 
@@ -26,18 +27,46 @@ hemera.ready(() => {
     {
       topic,
       cmd: 'subscribe',
-      subject: 'news',
-      options: {
-        setAckWait: 10000,
-        setDeliverAllAvailable: true,
-        setDurableName: 'news'
-      }
+      subject: 'news'
     },
     function(err, resp) {
       if (err) {
         this.log.error(err)
       }
       this.log.info(resp, 'ACK')
+      const subId = resp.subId
+
+      /**
+       * Publish an event from hemera
+       */
+      hemera.act(
+        {
+          topic,
+          cmd: 'publish',
+          subject: 'news',
+          data: {
+            a: 1
+          }
+        },
+        function(err, resp) {
+          if (err) {
+            this.log.error(err)
+          }
+          this.log.info(resp, 'PUBLISHED')
+          hemera.act(
+            {
+              topic: `${topic}.subs.${subId}`,
+              cmd: 'unsubscribe'
+            },
+            (err, resp) => {
+              if (err) {
+                this.log.error(err)
+              }
+              this.log.info(resp, 'UNSUBSCRIBED')
+            }
+          )
+        }
+      )
     }
   )
 
@@ -55,26 +84,4 @@ hemera.ready(() => {
       // reply(new Error('test'))
     }
   )
-
-  setTimeout(() => {
-    /**
-     * Publish an event from hemera
-     */
-    hemera.act(
-      {
-        topic,
-        cmd: 'publish',
-        subject: 'news',
-        data: {
-          a: 1
-        }
-      },
-      function(err, resp) {
-        if (err) {
-          this.log.error(err)
-        }
-        this.log.info(resp, 'PUBLISHED')
-      }
-    )
-  }, 100)
 })

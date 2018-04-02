@@ -28,6 +28,7 @@ const hemera = new Hemera(nats, {
 hemera.use(hemeraJoi)
 hemera.use(hemeraNatsStreaming, {
   clusterId: 'test-cluster',
+  clientId: 'test-client',
   options: {} // NATS/STAN options
 })
 ```

@@ -18,7 +18,8 @@ const expect = Code.expect
 
 describe('Hemera-nats-streaming', function() {
   let PORT = 4222
-  let cluster = 'test-cluster'
+  let clusterId = 'test-cluster'
+  let clientId = 'test-client'
   let uri = 'nats://localhost:' + PORT
   const topic = 'natss'
   let server
@@ -35,11 +36,12 @@ describe('Hemera-nats-streaming', function() {
         timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'debug'
+            logLevel: 'error'
           })
           hemera.use(HemeraJoi)
           hemera.use(HemeraNatsStreaming, {
-            clusterId: cluster
+            clusterId,
+            clientId
           })
           hemera.ready(done)
         }, 250)
@@ -84,9 +86,9 @@ describe('Hemera-nats-streaming', function() {
         expect(resp.subject).to.be.equals(subject)
         expect(resp.subId).to.be.exists()
         // after subscription two server actions are added suspend and unsubscribe
-        expect(
-          hemera.topics.has(`${topic}.subs.${resp.subId}`)
-        ).to.be.equals(true)
+        expect(hemera.topics.has(`${topic}.subs.${resp.subId}`)).to.be.equals(
+          true
+        )
 
         hemera.act(
           {
@@ -145,7 +147,7 @@ describe('Hemera-nats-streaming', function() {
     )
   })
 
-  it('Subscribe and receive message', function(done) {
+  it('Publish and subscribe', function(done) {
     const subject = 'newNews'
     hemera.act(
       {
@@ -174,5 +176,11 @@ describe('Hemera-nats-streaming', function() {
         })
       }
     )
+  })
+
+  it('Should expose errors', function(done) {
+    const subject = 'newNews'
+    expect(hemera.natss.ParseError).to.be.exists()
+    done()
   })
 })

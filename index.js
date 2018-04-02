@@ -10,14 +10,14 @@ const Nats = require('node-nats-streaming')
 function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
   const Joi = hemera.joi
-  const ParsingError = hemera.createError('ParsingError')
+  const ParseError = hemera.createError('ParseError')
   const clientId = opts.clientId || hemera.config.name
   const stan =
     opts.natssInstance || Nats.connect(opts.clusterId, clientId, opts.options)
   const subs = new Map()
 
   hemera.decorate('natss', {
-    ParsingError
+    ParseError
   })
 
   hemera.ext('onClose', (ctx, done) => {
@@ -46,7 +46,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         const result = SafeStringify(req.data)
 
         if (result.error) {
-          const error = new ParsingError(
+          const error = new ParseError(
             `Message could not be stringified. Subject "${req.subject}"`
           ).causedBy(result.error)
           this.log.error(error)
@@ -101,20 +101,22 @@ function hemeraNatsStreaming(hemera, opts, done) {
           }
         }
 
-        this.log.debug(
-          opts,
-          `Create subscription with subject '${req.subject}'`
-        )
-
         const sub = stan.subscribe(req.subject, req.queue, opts)
         subs.set(sub.inboxSub, sub)
+
+        this.log.debug(
+          opts,
+          `Create subscription with subject '${req.subject}' and subId ${
+            sub.inboxSub
+          }`
+        )
 
         sub.on('message', msg => {
           const result = SafeParse(msg.getData())
           const hemeraTopic = topic + '.' + req.subject
 
           if (result.error) {
-            const error = new ParsingError(
+            const error = new ParseError(
               `Message could not be parsed as JSON. Subject '${req.subject}'`
             ).causedBy(result.error)
             this.log.error(error)
@@ -156,7 +158,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
             subs.get(sub.inboxSub).close()
             subs.get(sub.inboxSub).once('closed', () => {
               subs.delete(sub.inboxSub)
-              // unsubscribe and remove patterns
+              // clean subscription and patterns from hemera
               hemera.remove(subTopic)
               reply(null, true)
             })
@@ -175,14 +177,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
             subs.get(sub.inboxSub).unsubscribe()
             subs.get(sub.inboxSub).once('unsubscribed', () => {
               subs.delete(sub.inboxSub)
-              // unsubscribe and remove patterns
+              // clean subscription and patterns from hemera
               hemera.remove(subTopic)
               reply(null, true)
             })
           }
         )
 
-        // we don't use always the same connection so we have to ensure that the subs were created
+        // force flush to make suspend and unususcribe action available
         hemera.transport.flush(() => {
           this.log.debug(
             `Force flush for subscription with subject '${
