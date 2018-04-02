@@ -39,9 +39,7 @@ describe('Hemera-nats-streaming', function() {
           })
           hemera.use(HemeraJoi)
           hemera.use(HemeraNatsStreaming, {
-            clusterId: cluster,
-            clientId: 'clientTest',
-            opts: {}
+            clusterId: cluster
           })
           hemera.ready(done)
         }, 250)
@@ -87,12 +85,12 @@ describe('Hemera-nats-streaming', function() {
         expect(resp.subId).to.be.exists()
         // after subscription two server actions are added suspend and unsubscribe
         expect(
-          hemera.topics.has(`${topic}.subscriptions.${resp.subId}`)
+          hemera.topics.has(`${topic}.subs.${resp.subId}`)
         ).to.be.equals(true)
 
         hemera.act(
           {
-            topic: `${topic}.subscriptions.${resp.subId}`,
+            topic: `${topic}.subs.${resp.subId}`,
             cmd: 'unsubscribe'
           },
           function(err, resp) {
@@ -121,7 +119,7 @@ describe('Hemera-nats-streaming', function() {
 
         hemera.act(
           {
-            topic: `${topic}.subscriptions.${resp.subId}`,
+            topic: `${topic}.subs.${resp.subId}`,
             cmd: 'suspend'
           },
           function(err, resp) {

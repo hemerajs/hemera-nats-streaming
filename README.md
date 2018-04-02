@@ -18,14 +18,32 @@ Since nats-streaming based on NATS Server you are able to run both technologies 
 npm i hemera-nats-streaming --save
 ```
 
+## Usage
+
+```js
+const hemera = new Hemera(nats, {
+  logLevel: 'debug'
+})
+
+hemera.use(hemeraJoi)
+hemera.use(hemeraNatsStreaming, {
+  clusterId: 'test-cluster',
+  options: {} // NATS/STAN options
+})
+```
+
 We provide a simple interface to work with nats-streaming
 
 ## Subscribe
 
 Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `test` you will receive all messages on topic `natss.test` in hemera. Returns an object like:
 
-```
-{ "subject: "news", opts /*applied options*/, "subId": 5 }
+```js
+{
+  "subject": "news",
+  "opts": { /*applied options*/ },
+  "subId": 5
+}
 ```
 
 ```js
@@ -86,17 +104,15 @@ hemera.add(
 )
 ```
 
-### Why you don't implement nats-streaming in hemera?
+## Why you don't implement nats-streaming in hemera?
 
 They use the same server but the purpose is quite different with hemera we want to provide a simple toolkit without any delivery guarantee. NATS-streaming was created to fill this gap with a mimimalistic protocol extension. We can use this feature while creating a simple bridge to nats-streaming. It will create a minimal roundtrip overhead but it's tolerable. The greatest fact is that we can run both technologies side by side\* with one nats-streaming-server.
 
-_\*nats-streaming-server_ hasn't support for cluster mode but it's planned for this year 2017. This doesn't mean you can't be [fault-tolerant](https://github.com/nats-io/nats-streaming-server#fault-tolerance)
-
-### Why we need NATS-Streaming ?
+## Why we need NATS-Streaming?
 
 Usually we would use RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing a reliable driver is hard. With NATS-Streaming we can use the same technology which hemera based on to combine both aspects without to increase the complexity.
 
-### Limitations
+## Caveats
 
 * Only JSON support
 * NATS Streaming subscriptions do not support wildcards but there is a [proposal](https://github.com/nats-io/nats-streaming-server/issues/340).

@@ -11,8 +11,10 @@ function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
   const Joi = hemera.joi
   const ParsingError = hemera.createError('ParsingError')
-  const stan = Nats.connect(opts.clusterId, opts.clientId, opts.opts)
-  const subscriptions = new Map()
+  const clientId = opts.clientId || hemera.config.name
+  const stan =
+    opts.natssInstance || Nats.connect(opts.clusterId, clientId, opts.options)
+  const subs = new Map()
 
   hemera.decorate('natss', {
     ParsingError
@@ -105,7 +107,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         )
 
         const sub = stan.subscribe(req.subject, req.queue, opts)
-        subscriptions.set(sub.inboxSub, sub)
+        subs.set(sub.inboxSub, sub)
 
         sub.on('message', msg => {
           const result = SafeParse(msg.getData())
@@ -140,7 +142,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
           }
         })
 
-        const subTopic = `${topic}.subscriptions.${sub.inboxSub}`
+        const subTopic = `${topic}.subs.${sub.inboxSub}`
 
         /**
          * Create a server action to suspend an active subscription
@@ -151,9 +153,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
             cmd: 'suspend'
           },
           function(req, reply) {
-            subscriptions.get(sub.inboxSub).close()
-            subscriptions.get(sub.inboxSub).once('closed', () => {
-              subscriptions.delete(sub.inboxSub)
+            subs.get(sub.inboxSub).close()
+            subs.get(sub.inboxSub).once('closed', () => {
+              subs.delete(sub.inboxSub)
               // unsubscribe and remove patterns
               hemera.remove(subTopic)
               reply(null, true)
@@ -170,9 +172,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
             cmd: 'unsubscribe'
           },
           function(req, reply) {
-            subscriptions.get(sub.inboxSub).unsubscribe()
-            subscriptions.get(sub.inboxSub).once('unsubscribed', () => {
-              subscriptions.delete(sub.inboxSub)
+            subs.get(sub.inboxSub).unsubscribe()
+            subs.get(sub.inboxSub).once('unsubscribed', () => {
+              subs.delete(sub.inboxSub)
               // unsubscribe and remove patterns
               hemera.remove(subTopic)
               reply(null, true)

@@ -13,8 +13,7 @@ const hemera = new Hemera(nats, {
 hemera.use(hemeraJoi)
 hemera.use(hemeraNatsStreaming, {
   clusterId: 'test-cluster',
-  clientId: 'test',
-  opts: {} // object with NATS/STAN options
+  options: {} // NATS/STAN options
 })
 
 const topic = 'natss'
