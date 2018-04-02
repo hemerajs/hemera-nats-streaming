@@ -36,7 +36,7 @@ describe('Hemera-nats-streaming', function() {
         timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'debug'
+            logLevel: 'error'
           })
           hemera.use(HemeraNatsStreaming, {
             clusterId,
@@ -126,6 +126,7 @@ describe('Hemera-nats-streaming', function() {
           function(err, resp) {
             expect(err).to.be.not.exists()
             expect(resp).to.be.equals(true)
+
             hemera.act(
               {
                 topic,
@@ -156,6 +157,7 @@ describe('Hemera-nats-streaming', function() {
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
+
         hemera.add(
           {
             topic: `${topic}.${subject}`
@@ -167,12 +169,19 @@ describe('Hemera-nats-streaming', function() {
             done()
           }
         )
-        hemera.act({
-          topic,
-          cmd: 'publish',
-          subject,
-          data: { foo: 'bar' }
-        })
+
+        hemera.act(
+          {
+            topic,
+            cmd: 'publish',
+            subject,
+            data: { foo: 'bar' }
+          },
+          (err, resp) => {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.exists()
+          }
+        )
       }
     )
   })

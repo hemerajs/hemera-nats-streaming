@@ -100,6 +100,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         }
 
         const opts = stan.subscriptionOptions()
+        opts.setManualAckMode(true)
 
         // build subscription options
         for (let option in req.options) {
