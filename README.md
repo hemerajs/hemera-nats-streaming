@@ -15,7 +15,7 @@ Since nats-streaming based on NATS Server you are able to run both technologies 
 ## Install
 
 ```
-npm i hemera-joi hemera-nats-streaming --save
+npm i hemera-nats-streaming --save
 ```
 
 ## Usage
