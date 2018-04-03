@@ -24,6 +24,11 @@ function hemeraNatsStreaming(hemera, opts, done) {
     done()
   })
 
+  stan.on('error', err => {
+    hemera.log.error(err, 'stan error')
+    hemera.close(() => stan.close())
+  })
+
   stan.on('connect', function() {
     /**
      * Publish a message over NATS-Streaming server
@@ -197,11 +202,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
         })
       }
     )
-  })
-
-  stan.on('error', err => {
-    hemera.log.error(err, 'stan error')
-    hemera.close(() => stan.close())
   })
 
   done()
