@@ -19,15 +19,9 @@ function hemeraNatsStreaming(hemera, opts, done) {
     ParseError
   })
 
-  hemera.ext('onClose', (ctx, done) => {
-    hemera.log.debug('Stan closing ...')
-    stan.close()
+  hemera.ext('onClose', (hemera, done) => {
+    hemera.log.debug('nats-streaming closing ...')
     done()
-  })
-
-  stan.on('error', err => {
-    hemera.log.error(err)
-    hemera.fatal()
   })
 
   stan.on('connect', function() {
@@ -203,9 +197,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
         })
       }
     )
-
-    done()
   })
+
+  stan.on('error', err => {
+    hemera.log.error(err, 'stan error')
+    hemera.close(() => stan.close())
+  })
+
+  done()
 }
 
 const plugin = Hp(hemeraNatsStreaming, {
