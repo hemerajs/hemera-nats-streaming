@@ -100,13 +100,17 @@ hemera.act({
 })
 ```
 
-Returns an object like:
+Returns a list of objects like:
 
 ```js
-{
-  "subject": "news",
-  "options": { /*applied options*/ },
-}
+[
+  {
+    subject: 'news',
+    options: {
+      /*applied options*/
+    }
+  }
+]
 ```
 
 ## Publish in hemera
