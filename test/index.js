@@ -62,11 +62,30 @@ describe('Hemera-nats-streaming', function() {
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
-        expect(resp.opts).to.be.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.subId).to.be.exists()
-        expect(resp.clientId).to.be.equals(clientId)
-        expect(resp.clusterId).to.be.equals(clusterId)
+        expect(resp.durableName).to.be.not.exists()
+        expect(resp.manualAcks).to.be.equals(true)
+        done()
+      }
+    )
+  })
+
+  it('Subscribe with options', function(done) {
+    const subject = 'orderCreated'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject,
+        options: {
+          durableName: 'test'
+        }
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.subject).to.be.equals(subject)
+        expect(resp.durableName).to.be.equals('test')
+        expect(resp.manualAcks).to.be.equals(true)
         done()
       }
     )
@@ -82,9 +101,7 @@ describe('Hemera-nats-streaming', function() {
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
-        expect(resp.opts).to.be.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.subId).to.be.exists()
         // after subscription two server actions are added suspend and unsubscribe
         expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
           true
@@ -116,9 +133,7 @@ describe('Hemera-nats-streaming', function() {
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
-        expect(resp.opts).to.be.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.subId).to.be.exists()
 
         hemera.act(
           {
@@ -138,9 +153,7 @@ describe('Hemera-nats-streaming', function() {
               },
               function(err, resp) {
                 expect(err).to.be.not.exists()
-                expect(resp.opts).to.be.exists()
                 expect(resp.subject).to.be.equals(subject)
-                expect(resp.subId).to.be.exists()
                 done()
               }
             )
@@ -199,9 +212,7 @@ describe('Hemera-nats-streaming', function() {
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
-        expect(resp.opts).to.be.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.subId).to.be.exists()
         // after subscription two server actions are added suspend and unsubscribe
         expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
           true

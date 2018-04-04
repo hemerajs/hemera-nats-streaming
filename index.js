@@ -154,10 +154,8 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
         reply(null, {
           subject: req.subject,
-          opts,
-          clusterId,
-          clientId,
-          subId: sub.inboxSub
+          durableName: opts.durableName,
+          manualAcks: opts.manualAcks
         })
       }
     )
