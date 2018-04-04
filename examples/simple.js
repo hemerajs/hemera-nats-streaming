@@ -8,9 +8,11 @@ const hemera = new Hemera(nats, {
   logLevel: 'debug',
   childLogger: true
 })
+const clientId = 'test-client'
+const clusterId = 'test-cluster'
 hemera.use(hemeraNatsStreaming, {
-  clusterId: 'test-cluster',
-  clientId: 'test-client',
+  clusterId,
+  clientId,
   options: {} // NATS/STAN options
 })
 
@@ -20,18 +22,18 @@ hemera.ready(() => {
   /**
    * Create nats-streaming-subscription
    */
+  const subject = 'news'
   hemera.act(
     {
       topic,
       cmd: 'subscribe',
-      subject: 'news'
+      subject
     },
     function(err, resp) {
       if (err) {
         this.log.error(err)
       }
       this.log.info(resp, 'ACK')
-      const subId = resp.subId
 
       /**
        * Publish an event from hemera
@@ -40,7 +42,7 @@ hemera.ready(() => {
         {
           topic,
           cmd: 'publish',
-          subject: 'news',
+          subject,
           data: {
             a: 1
           }
@@ -52,8 +54,9 @@ hemera.ready(() => {
           this.log.info(resp, 'PUBLISHED')
           hemera.act(
             {
-              topic: `${topic}.subs.${subId}`,
-              cmd: 'unsubscribe'
+              topic: `${topic}.clients.${clientId}`,
+              cmd: 'unsubscribe',
+              subject
             },
             (err, resp) => {
               if (err) {
