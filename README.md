@@ -8,9 +8,9 @@ This is a plugin to use [NATS-Streaming](http://nats.io/) with Hemera.
 We use the official [Node-nats-streaming](https://github.com/nats-io/node-nats-streaming) client.
 Since nats-streaming based on NATS Server you are able to run both technologies with one NATS-streaming-server.
 
-* [Download](http://nats.io/download/nats-io/nats-streaming-server/) and start nats-streaming-server
-* Start hemera and use this plugin to initialize a connection to the streaming server
-* You can now use hemera and nats-streaming with one server!
+1.  [Download](http://nats.io/download/nats-io/nats-streaming-server/) and start nats-streaming-server
+2.  Start hemera and use this plugin to initialize a connection to the streaming server
+3.  You can now use hemera and nats-streaming with one server!
 
 ## Install
 
@@ -31,27 +31,42 @@ hemera.use(hemeraNatsStreaming, {
 })
 ```
 
-We provide a simple interface to work with nats-streaming
-
 ## Subscribe
 
-Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `test` you will receive all messages on topic `natss.test` in hemera. Returns an object like:
-
-```js
-{
-  "subject": "news",
-  "opts": { /*applied options*/ },
-  "subId": 5
-}
-```
+Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `news` you will receive all messages on topic `natss.news` in hemera.
 
 ```js
 hemera.act({
   topic: 'natss',
   cmd: 'subscribe',
   subject: 'news'
+  options: {}
 })
 ```
+
+Returns an object like:
+
+```js
+{
+  "subject": "news",
+  "opts": { /*applied options*/ },
+  "subId": 5,
+  "clientId": "test-client",
+  "clusterId": "test-cluster"
+}
+```
+
+### Available options:
+
+* startWithLastReceived `(boolean)` Subscribe starting with the most recently published value
+* deliverAllAvailable `(boolean)` Receive all stored values in order
+* startAtSequence: `(integer)` Receive all messages starting at a specific sequence number
+* startTime: `(Date)` Subscribe starting at a specific time
+* startAtTimeDelta `(integer)`
+* durableName `(string)` Create a durable subscription
+* maxInFlight `(integer)` The maximum number of outstanding acknowledgements
+* manualAckMode: (`boolean`, default: `true`)
+* ackWait (`integer`, default: `30000` ms) If an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message.
 
 ## Unsubscribe
 
@@ -59,8 +74,9 @@ Removes the subscription from NATS-Streaming server. Returns `true` or `false` w
 
 ```js
 hemera.act({
-  topic: 'natss.subscriptions.{subId}',
-  cmd: 'suspend'
+  topic: 'natss.clients.{clientId}',
+  cmd: 'unsubscribe',
+  subject: 'news'
 })
 ```
 
@@ -70,9 +86,31 @@ Suspend the subscription from NATS-Streaming server. You can active it if you ca
 
 ```js
 hemera.act({
-  topic: 'natss.subscriptions.{subId}',
-  cmd: 'unsubscribe'
+  topic: 'natss.clients.{clientId}',
+  cmd: 'suspend',
+  subject: 'news'
 })
+```
+
+## List active subscriptions
+
+List all active subscriptions from a client.
+
+```js
+hemera.act({
+  topic: 'natss.clients.{clientId}',
+  cmd: 'list'
+})
+```
+
+Returns an object like:
+
+```js
+{
+  "subject": "news",
+  "durableName": "news",
+  "manualAcks": true
+}
 ```
 
 ## Publish in hemera
@@ -81,7 +119,7 @@ Publish a message to NATS-Streaming server.
 
 ```js
 hemera.act({
-  topic: 'nats-streaming',
+  topic: 'natss',
   cmd: 'publish',
   subject: 'news',
   data: { foo: 'bar' }

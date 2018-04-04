@@ -10,10 +10,12 @@ const Nats = require('node-nats-streaming')
 function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
   const ParseError = hemera.createError('ParseError')
-  const clientId = opts.clientId || hemera.config.name
+  const clientId = opts.clientId
+  const clusterId = opts.clusterId
   const stan =
-    opts.natssInstance || Nats.connect(opts.clusterId, clientId, opts.options)
+    opts.natssInstance || Nats.connect(clusterId, clientId, opts.options)
   const subs = new Map()
+  let connected = false
 
   hemera.decorate('natss', {
     ParseError
@@ -25,20 +27,22 @@ function hemeraNatsStreaming(hemera, opts, done) {
   })
 
   stan.on('error', err => {
+    if (connected === false) {
+      done(err)
+    }
     hemera.log.error(err, 'stan error')
     hemera.close(() => stan.close())
   })
 
-  stan.on('connect', function() {
-    /**
-     * Publish a message over NATS-Streaming server
-     */
+  stan.on('connect', boot)
+
+  function boot() {
     hemera.add(
       {
         topic,
         cmd: 'publish'
       },
-      function(req, reply) {
+      (req, reply) => {
         if (typeof req.subject !== 'string') {
           reply(
             new Error(
@@ -62,7 +66,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
           const error = new ParseError(
             `Message could not be stringified. Subject "${req.subject}"`
           ).causedBy(result.error)
-          this.log.error(error)
+          hemera.log.error(error)
           reply(error)
         } else {
           stan.publish(req.subject, result.value, function publishHandler(
@@ -79,20 +83,16 @@ function hemeraNatsStreaming(hemera, opts, done) {
       }
     )
 
-    /**
-     * Create a subscription on the NATS-Streaming server
-     * Manual acknowledgement is handled by request / reply call to NATS
-     */
     hemera.add(
       {
         topic,
         cmd: 'subscribe'
       },
-      function(req, reply) {
-        if (typeof req.subject !== 'string') {
+      (req, reply) => {
+        if (typeof req.subject !== 'string' || !req.subject) {
           reply(
             new Error(
-              `Subject must be from type 'string' but got '${typeof req.subject}'`
+              `Subject must be not empty and from type 'string' but got '${typeof req.subject}'`
             )
           )
           return
@@ -103,15 +103,16 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
         // build subscription options
         for (let option in req.options) {
-          if (req.options[option] && opts[option]) {
-            opts[option](req.options[option])
+          const setterName = 'set' + option[0].toUpperCase() + option.slice(1)
+          if (req.options[option] && typeof opts[setterName] === 'function') {
+            opts[setterName](req.options[option])
           }
         }
 
         const sub = stan.subscribe(req.subject, req.queue, opts)
-        subs.set(sub.inboxSub, sub)
+        subs.set(req.subject, sub)
 
-        this.log.debug(
+        hemera.log.debug(
           opts,
           `Create subscription with subject '${req.subject}' and subId ${
             sub.inboxSub
@@ -126,7 +127,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
             const error = new ParseError(
               `Message could not be parsed as JSON. Subject '${req.subject}'`
             ).causedBy(result.error)
-            this.log.error(error)
+            hemera.log.error(error)
           } else {
             const data = {
               sequence: msg.getSequence(),
@@ -138,11 +139,11 @@ function hemeraNatsStreaming(hemera, opts, done) {
                 topic: hemeraTopic,
                 data
               },
-              function(err, resp) {
+              (err, resp) => {
                 if (!err) {
                   msg.ack()
                 } else {
-                  this.log.error(
+                  hemera.log.error(
                     `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
                   )
                 }
@@ -151,60 +152,81 @@ function hemeraNatsStreaming(hemera, opts, done) {
           }
         })
 
-        const subTopic = `${topic}.subs.${sub.inboxSub}`
-
-        /**
-         * Create a server action to suspend an active subscription
-         */
-        hemera.add(
-          {
-            topic: subTopic,
-            cmd: 'suspend'
-          },
-          function(req, reply) {
-            subs.get(sub.inboxSub).close()
-            subs.get(sub.inboxSub).once('closed', () => {
-              subs.delete(sub.inboxSub)
-              // clean subscription and patterns from hemera
-              hemera.remove(subTopic)
-              reply(null, true)
-            })
-          }
-        )
-
-        /**
-         * Create a server action to unsubscribe a subscription
-         */
-        hemera.add(
-          {
-            topic: subTopic,
-            cmd: 'unsubscribe'
-          },
-          function(req, reply) {
-            subs.get(sub.inboxSub).unsubscribe()
-            subs.get(sub.inboxSub).once('unsubscribed', () => {
-              subs.delete(sub.inboxSub)
-              // clean subscription and patterns from hemera
-              hemera.remove(subTopic)
-              reply(null, true)
-            })
-          }
-        )
-
-        // force flush to make suspend and unususcribe action available
-        hemera.transport.flush(() => {
-          this.log.debug(
-            `Force flush for subscription with subject '${
-              req.subject
-            }' and subId ${sub.inboxSub}`
-          )
-          reply(null, { subject: req.subject, opts, subId: sub.inboxSub })
+        reply(null, {
+          subject: req.subject,
+          opts,
+          clusterId,
+          clientId,
+          subId: sub.inboxSub
         })
       }
     )
-  })
 
-  done()
+    hemera.add(
+      {
+        topic: `${topic}.clients.${clientId}`,
+        cmd: 'suspend'
+      },
+      (req, reply) => {
+        if (typeof req.subject !== 'string' || !req.subject) {
+          reply(
+            new Error(
+              `Subject must be not empty and from type 'string' but got '${typeof req.subject}'`
+            )
+          )
+          return
+        }
+        subs.get(req.subject).close()
+        subs.get(req.subject).once('closed', () => {
+          subs.delete(req.subject)
+          reply(null, true)
+        })
+      }
+    )
+
+    hemera.add(
+      {
+        topic: `${topic}.clients.${clientId}`,
+        cmd: 'unsubscribe'
+      },
+      (req, reply) => {
+        if (typeof req.subject !== 'string' || !req.subject) {
+          reply(
+            new Error(
+              `Subject must be not empty and from type 'string' but got '${typeof req.subject}'`
+            )
+          )
+          return
+        }
+        subs.get(req.subject).unsubscribe()
+        subs.get(req.subject).once('unsubscribed', () => {
+          subs.delete(req.subject)
+          reply(null, true)
+        })
+      }
+    )
+
+    hemera.add(
+      {
+        topic: `${topic}.clients.${clientId}`,
+        cmd: 'list'
+      },
+      (req, reply) => {
+        let list = []
+        for (const sub of subs.values()) {
+          list.push({
+            subject: sub.subject,
+            durableName: sub.opts.durableName,
+            manualAcks: sub.opts.manualAcks
+          })
+        }
+        reply(null, list)
+      }
+    )
+
+    connected = true
+    done()
+  }
 }
 
 const plugin = Hp(hemeraNatsStreaming, {

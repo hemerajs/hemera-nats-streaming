@@ -3,7 +3,6 @@
 const Hemera = require('nats-hemera')
 const Nats = require('nats')
 const HemeraNatsStreaming = require('./../')
-const HemeraJoi = require('hemera-joi')
 const Code = require('code')
 const HemeraTestsuite = require('hemera-testsuite')
 const ssc = require('./support/stan_server_control')
@@ -36,7 +35,7 @@ describe('Hemera-nats-streaming', function() {
         timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'error'
+            logLevel: 'debug'
           })
           hemera.use(HemeraNatsStreaming, {
             clusterId,
@@ -66,6 +65,8 @@ describe('Hemera-nats-streaming', function() {
         expect(resp.opts).to.be.exists()
         expect(resp.subject).to.be.equals(subject)
         expect(resp.subId).to.be.exists()
+        expect(resp.clientId).to.be.equals(clientId)
+        expect(resp.clusterId).to.be.equals(clusterId)
         done()
       }
     )
@@ -85,14 +86,15 @@ describe('Hemera-nats-streaming', function() {
         expect(resp.subject).to.be.equals(subject)
         expect(resp.subId).to.be.exists()
         // after subscription two server actions are added suspend and unsubscribe
-        expect(hemera.topics.has(`${topic}.subs.${resp.subId}`)).to.be.equals(
+        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
           true
         )
 
         hemera.act(
           {
-            topic: `${topic}.subs.${resp.subId}`,
-            cmd: 'unsubscribe'
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'unsubscribe',
+            subject
           },
           function(err, resp) {
             expect(err).to.be.not.exists()
@@ -120,8 +122,9 @@ describe('Hemera-nats-streaming', function() {
 
         hemera.act(
           {
-            topic: `${topic}.subs.${resp.subId}`,
-            cmd: 'suspend'
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'suspend',
+            subject
           },
           function(err, resp) {
             expect(err).to.be.not.exists()
@@ -180,6 +183,41 @@ describe('Hemera-nats-streaming', function() {
           (err, resp) => {
             expect(err).to.be.not.exists()
             expect(resp).to.be.exists()
+          }
+        )
+      }
+    )
+  })
+
+  it('List active subscribtions', function(done) {
+    const subject = 'orderCreated2'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.opts).to.be.exists()
+        expect(resp.subject).to.be.equals(subject)
+        expect(resp.subId).to.be.exists()
+        // after subscription two server actions are added suspend and unsubscribe
+        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
+          true
+        )
+
+        hemera.act(
+          {
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'list'
+          },
+          function(err, resp) {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.an.array()
+            expect(resp[0].subject).to.be.string()
+            expect(resp[0].manualAcks).to.be.boolean()
+            done()
           }
         )
       }
