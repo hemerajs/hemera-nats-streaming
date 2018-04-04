@@ -1,7 +1,6 @@
 'use strict'
 
 const Hemera = require('nats-hemera')
-const hemeraJoi = require('hemera-joi')
 const nats = require('nats').connect()
 const hemeraNatsStreaming = require('./../')
 
@@ -9,64 +8,80 @@ const hemera = new Hemera(nats, {
   logLevel: 'debug',
   childLogger: true
 })
-
-hemera.use(hemeraJoi)
+const clientId = 'test-client'
+const clusterId = 'test-cluster'
 hemera.use(hemeraNatsStreaming, {
-  clusterId: 'test-cluster',
-  clientId: 'test',
-  opts: {} // object with NATS/STAN options
+  clusterId,
+  clientId,
+  options: {} // NATS/STAN options
 })
+
+const topic = 'natss'
 
 hemera.ready(() => {
   /**
    * Create nats-streaming-subscription
    */
+  const subject = 'news'
   hemera.act(
     {
-      topic: 'nats-streaming',
+      topic,
       cmd: 'subscribe',
-      subject: 'orderCreated',
-      options: {
-        setAckWait: 10000,
-        setDeliverAllAvailable: true,
-        setDurableName: 'orderCreated'
-      }
+      subject
     },
     function(err, resp) {
+      if (err) {
+        this.log.error(err)
+      }
       this.log.info(resp, 'ACK')
+
+      /**
+       * Publish an event from hemera
+       */
+      hemera.act(
+        {
+          topic,
+          cmd: 'publish',
+          subject,
+          data: {
+            a: 1
+          }
+        },
+        function(err, resp) {
+          if (err) {
+            this.log.error(err)
+          }
+          this.log.info(resp, 'PUBLISHED')
+          hemera.act(
+            {
+              topic: `${topic}.clients.${clientId}`,
+              cmd: 'unsubscribe',
+              subject
+            },
+            (err, resp) => {
+              if (err) {
+                this.log.error(err)
+              }
+              this.log.info(resp, 'UNSUBSCRIBED')
+            }
+          )
+        }
+      )
     }
   )
 
   /**
-   * Add listener for nats-streaming-events
+   * Add listener for nats-streaming events
    */
   hemera.add(
     {
-      topic: 'nats-streaming.orderCreated'
+      topic: `${topic}.news`
     },
     function(req, reply) {
       this.log.info(req, 'RECEIVED')
       // ACK Message, if you pass an error the message is redelivered every 10 seconds
-      reply(/* new Error('test') */)
+      reply()
+      // reply(new Error('test'))
     }
   )
-
-  setTimeout(() => {
-    /**
-     * Publish an event from hemera
-     */
-    hemera.act(
-      {
-        topic: 'nats-streaming',
-        cmd: 'publish',
-        subject: 'orderCreated',
-        data: {
-          a: 1
-        }
-      },
-      function(err, resp) {
-        this.log.info(resp, 'PUBLISHED')
-      }
-    )
-  }, 100)
 })

@@ -3,7 +3,6 @@
 const Hemera = require('nats-hemera')
 const Nats = require('nats')
 const HemeraNatsStreaming = require('./../')
-const HemeraJoi = require('hemera-joi')
 const Code = require('code')
 const HemeraTestsuite = require('hemera-testsuite')
 const ssc = require('./support/stan_server_control')
@@ -12,13 +11,16 @@ const net = require('net')
 const os = require('os')
 const path = require('path')
 const nuid = require('nuid')
+const timers = require('timers')
 
 const expect = Code.expect
 
 describe('Hemera-nats-streaming', function() {
   let PORT = 4222
-  let cluster = 'test-cluster'
+  let clusterId = 'test-cluster'
+  let clientId = 'test-client'
   let uri = 'nats://localhost:' + PORT
+  const topic = 'natss'
   let server
   let hemera
 
@@ -29,20 +31,17 @@ describe('Hemera-nats-streaming', function() {
       PORT,
       ['--store', 'FILE', '--dir', serverDir],
       function() {
-        setTimeout(function() {
+        // wait until server is ready
+        timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'info'
+            logLevel: 'debug'
           })
-          hemera.use(HemeraJoi)
           hemera.use(HemeraNatsStreaming, {
-            clusterId: cluster,
-            clientId: 'clientTest',
-            opts: {}
+            clusterId,
+            clientId
           })
-          hemera.ready(() => {
-            done()
-          })
+          hemera.ready(done)
         }, 250)
       }
     )
@@ -53,25 +52,192 @@ describe('Hemera-nats-streaming', function() {
     server.kill()
   })
 
-  it('Connect', function(done) {
+  it('Subscribe', function(done) {
+    const subject = 'orderCreated'
     hemera.act(
       {
-        topic: 'nats-streaming',
+        topic,
         cmd: 'subscribe',
-        subject: 'orderCreated',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.subject).to.be.equals(subject)
+        expect(resp.options.durableName).to.be.not.exists()
+        expect(resp.options.manualAcks).to.be.equals(true)
+        done()
+      }
+    )
+  })
+
+  it('Subscribe with options', function(done) {
+    const subject = 'orderCreated'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject,
         options: {
-          setAckWait: 10000,
-          setDeliverAllAvailable: true,
-          setDurableName: 'orderCreated'
+          durableName: 'test'
         }
       },
       function(err, resp) {
         expect(err).to.be.not.exists()
-        expect(resp.created).to.be.equals(true)
-        expect(resp.opts).to.be.exists()
-        expect(resp.subject).to.be.equals('orderCreated')
+        expect(resp.subject).to.be.equals(subject)
+        expect(resp.options.durableName).to.be.equals('test')
+        expect(resp.options.manualAcks).to.be.equals(true)
         done()
       }
     )
+  })
+
+  it('Subscribe and unsubscribe', function(done) {
+    const subject = 'orderCreated2'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.subject).to.be.equals(subject)
+        // after subscription two server actions are added suspend and unsubscribe
+        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
+          true
+        )
+
+        hemera.act(
+          {
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'unsubscribe',
+            subject
+          },
+          function(err, resp) {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.equals(true)
+            done()
+          }
+        )
+      }
+    )
+  })
+
+  it('Subscribe, suspend and subscribe', function(done) {
+    const subject = 'orderCreated3'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.subject).to.be.equals(subject)
+
+        hemera.act(
+          {
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'suspend',
+            subject
+          },
+          function(err, resp) {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.equals(true)
+
+            hemera.act(
+              {
+                topic,
+                cmd: 'subscribe',
+                subject
+              },
+              function(err, resp) {
+                expect(err).to.be.not.exists()
+                expect(resp.subject).to.be.equals(subject)
+                done()
+              }
+            )
+          }
+        )
+      }
+    )
+  })
+
+  it('Publish and subscribe', function(done) {
+    const subject = 'newNews'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+
+        hemera.add(
+          {
+            topic: `${topic}.${subject}`
+          },
+          (req, cb) => {
+            expect(req.data.message).to.be.equals({ foo: 'bar' })
+            expect(req.data.sequence).to.be.number()
+            cb()
+            done()
+          }
+        )
+
+        hemera.act(
+          {
+            topic,
+            cmd: 'publish',
+            subject,
+            data: { foo: 'bar' }
+          },
+          (err, resp) => {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.exists()
+          }
+        )
+      }
+    )
+  })
+
+  it('List active subscribtions', function(done) {
+    const subject = 'orderCreated2'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+        expect(resp.subject).to.be.equals(subject)
+        // after subscription two server actions are added suspend and unsubscribe
+        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
+          true
+        )
+
+        hemera.act(
+          {
+            topic: `${topic}.clients.${clientId}`,
+            cmd: 'list'
+          },
+          function(err, resp) {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.an.array()
+            expect(resp[0].subject).to.be.string()
+            expect(resp[0].options.manualAcks).to.be.boolean()
+            done()
+          }
+        )
+      }
+    )
+  })
+
+  it('Should expose errors', function(done) {
+    const subject = 'newNews'
+    expect(hemera.natss.ParseError).to.be.exists()
+    done()
   })
 })
