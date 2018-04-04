@@ -63,8 +63,8 @@ describe('Hemera-nats-streaming', function() {
       function(err, resp) {
         expect(err).to.be.not.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.durableName).to.be.not.exists()
-        expect(resp.manualAcks).to.be.equals(true)
+        expect(resp.options.durableName).to.be.not.exists()
+        expect(resp.options.manualAcks).to.be.equals(true)
         done()
       }
     )
@@ -84,8 +84,8 @@ describe('Hemera-nats-streaming', function() {
       function(err, resp) {
         expect(err).to.be.not.exists()
         expect(resp.subject).to.be.equals(subject)
-        expect(resp.durableName).to.be.equals('test')
-        expect(resp.manualAcks).to.be.equals(true)
+        expect(resp.options.durableName).to.be.equals('test')
+        expect(resp.options.manualAcks).to.be.equals(true)
         done()
       }
     )
@@ -227,7 +227,7 @@ describe('Hemera-nats-streaming', function() {
             expect(err).to.be.not.exists()
             expect(resp).to.be.an.array()
             expect(resp[0].subject).to.be.string()
-            expect(resp[0].manualAcks).to.be.boolean()
+            expect(resp[0].options.manualAcks).to.be.boolean()
             done()
           }
         )

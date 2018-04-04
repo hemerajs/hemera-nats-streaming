@@ -154,8 +154,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
         reply(null, {
           subject: req.subject,
-          durableName: opts.durableName,
-          manualAcks: opts.manualAcks
+          options: opts
         })
       }
     )
@@ -214,8 +213,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         for (const sub of subs.values()) {
           list.push({
             subject: sub.subject,
-            durableName: sub.opts.durableName,
-            manualAcks: sub.opts.manualAcks
+            options: sub.opts
           })
         }
         reply(null, list)

@@ -49,10 +49,7 @@ Returns an object like:
 ```js
 {
   "subject": "news",
-  "opts": { /*applied options*/ },
-  "subId": 5,
-  "clientId": "test-client",
-  "clusterId": "test-cluster"
+  "options": { /*applied options*/ },
 }
 ```
 
@@ -108,8 +105,7 @@ Returns an object like:
 ```js
 {
   "subject": "news",
-  "durableName": "news",
-  "manualAcks": true
+  "options": { /*applied options*/ },
 }
 ```
 
