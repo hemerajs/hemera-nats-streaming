@@ -40,6 +40,7 @@ hemera.act({
   topic: 'natss',
   cmd: 'subscribe',
   subject: 'news'
+  queue: 'news.workers',
   options: {}
 })
 ```
@@ -49,6 +50,7 @@ Returns an object like:
 ```js
 {
   "subject": "news",
+  "queue": "foo.workers",
   "options": { /*applied options*/ },
 }
 ```
@@ -103,9 +105,10 @@ hemera.act({
 Returns a list of objects like:
 
 ```js
-[
+;[
   {
     subject: 'news',
+    queue: 'foo.workers',
     options: {
       /*applied options*/
     }

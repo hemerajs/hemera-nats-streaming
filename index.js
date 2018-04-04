@@ -154,6 +154,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
         reply(null, {
           subject: req.subject,
+          queue: req.queue,
           options: opts
         })
       }
@@ -213,6 +214,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
         for (const sub of subs.values()) {
           list.push({
             subject: sub.subject,
+            queue: sub.qGroup,
             options: sub.opts
           })
         }
