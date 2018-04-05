@@ -35,7 +35,7 @@ describe('Hemera-nats-streaming', function() {
         timers.setTimeout(function() {
           const nats = Nats.connect()
           hemera = new Hemera(nats, {
-            logLevel: 'debug'
+            logLevel: 'error'
           })
           hemera.use(HemeraNatsStreaming, {
             clusterId,
@@ -203,7 +203,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('List active subscribtions', function(done) {
-    const subject = 'orderCreated2'
+    const subject = 'orderCreated4'
     hemera.act(
       {
         topic,

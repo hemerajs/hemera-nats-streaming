@@ -97,7 +97,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
           )
           return
         }
-
         const opts = stan.subscriptionOptions()
         opts.setManualAckMode(true)
 
@@ -129,26 +128,25 @@ function hemeraNatsStreaming(hemera, opts, done) {
             ).causedBy(result.error)
             hemera.log.error(error)
           } else {
-            const data = {
-              sequence: msg.getSequence(),
-              message: result.value
-            }
-
-            hemera.act(
-              {
-                topic: hemeraTopic,
-                data
-              },
-              (err, resp) => {
-                if (!err) {
-                  msg.ack()
-                } else {
-                  hemera.log.error(
-                    `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
-                  )
-                }
+            let pattern = {
+              topic: hemeraTopic,
+              data: {
+                sequence: msg.getSequence(),
+                message: result.value
               }
-            )
+            }
+            if (typeof req.requestPattern === 'object') {
+              pattern = Object.assign(req.pattern, pattern)
+            }
+            hemera.act(pattern, (err, resp) => {
+              if (!err) {
+                msg.ack()
+              } else {
+                hemera.log.error(
+                  `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
+                )
+              }
+            })
           }
         })
 
@@ -174,11 +172,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
           )
           return
         }
-        subs.get(req.subject).close()
-        subs.get(req.subject).once('closed', () => {
+        const sub = subs.get(req.subject)
+        if (sub) {
+          sub.close()
           subs.delete(req.subject)
           reply(null, true)
-        })
+        } else {
+          reply(new Error('Subscription could not be found'))
+        }
       }
     )
 
@@ -196,11 +197,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
           )
           return
         }
-        subs.get(req.subject).unsubscribe()
-        subs.get(req.subject).once('unsubscribed', () => {
+        const sub = subs.get(req.subject)
+        if (sub) {
+          sub.unsubscribe()
           subs.delete(req.subject)
           reply(null, true)
-        })
+        } else {
+          reply(new Error('Subscription could not be found'))
+        }
       }
     )
 
