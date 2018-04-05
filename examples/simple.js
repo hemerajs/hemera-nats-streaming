@@ -17,17 +17,19 @@ hemera.use(hemeraNatsStreaming, {
 })
 
 const topic = 'natss'
+const subject = 'news'
 
 hemera.ready(() => {
   /**
-   * Create nats-streaming-subscription
+   * Create nats-streaming subscription
    */
-  const subject = 'news'
-
-  hemera.natsStreaming.add({
+  const sub = hemera.natsStreaming.add({
     subject
   })
 
+  /*
+  * Send message to nats-streaming
+  */
   hemera
     .act({
       topic,
@@ -37,13 +39,7 @@ hemera.ready(() => {
         a: 1
       }
     })
-    .then(() =>
-      hemera.act({
-        topic: `${topic}.clients.${clientId}`,
-        cmd: 'unsubscribe',
-        subject
-      })
-    )
+    .then(() => sub.unsubscribe())
     .catch(err => console.error(err))
 
   /**
