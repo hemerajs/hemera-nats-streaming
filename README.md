@@ -43,7 +43,7 @@ hemera.act({
 
   queue: 'news.workers', // (optional) nats-streaming queue group
   options: {}, // (optional) nats-streaming transport options
-  requestPattern: {} //  (optional) the pattern which arrive at hemera
+  pattern: {} //  (optional) the pattern which arrive hemera
 })
 ```
 

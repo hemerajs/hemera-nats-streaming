@@ -142,7 +142,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
                 message: result.value
               }
             }
-            if (typeof req.requestPattern === 'object') {
+            if (typeof req.pattern === 'object') {
               pattern = Object.assign(req.pattern, pattern)
             }
             hemera.act(pattern, (err, resp) => {

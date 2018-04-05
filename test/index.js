@@ -202,6 +202,49 @@ describe('Hemera-nats-streaming', function() {
     )
   })
 
+  it('Publish and subscribe with custom request pattern', function(done) {
+    const subject = 'orderCreated5'
+    hemera.act(
+      {
+        topic,
+        cmd: 'subscribe',
+        subject,
+        pattern: {
+          a: 1
+        }
+      },
+      function(err, resp) {
+        expect(err).to.be.not.exists()
+
+        hemera.add(
+          {
+            topic: `${topic}.${subject}`
+          },
+          (req, cb) => {
+            expect(req.data.message).to.be.equals({ foo: 'bar' })
+            expect(req.data.sequence).to.be.number()
+            expect(req.a).to.be.number(1)
+            cb()
+            done()
+          }
+        )
+
+        hemera.act(
+          {
+            topic,
+            cmd: 'publish',
+            subject,
+            data: { foo: 'bar' }
+          },
+          (err, resp) => {
+            expect(err).to.be.not.exists()
+            expect(resp).to.be.exists()
+          }
+        )
+      }
+    )
+  })
+
   it('List active subscribtions', function(done) {
     const subject = 'orderCreated6'
     hemera.act(
