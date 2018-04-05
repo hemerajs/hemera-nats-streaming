@@ -40,8 +40,10 @@ hemera.act({
   topic: 'natss',
   cmd: 'subscribe',
   subject: 'news'
-  queue: 'news.workers',
-  options: {}
+
+  queue: 'news.workers', // (optional) nats-streaming queue group
+  options: {}, // (optional) nats-streaming transport options
+  pattern: {} //  (optional) the pattern which arrive hemera
 })
 ```
 

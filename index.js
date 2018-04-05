@@ -1,19 +1,27 @@
 'use strict'
 
 const Hp = require('hemera-plugin')
-// eslint-disable-next-line node/no-unpublished-require
 const SafeStringify = require('nats-hemera/lib/encoder').encode
-// eslint-disable-next-line node/no-unpublished-require
 const SafeParse = require('nats-hemera/lib/decoder').decode
 const Nats = require('node-nats-streaming')
 
 function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
   const ParseError = hemera.createError('ParseError')
-  const clientId = opts.clientId
-  const clusterId = opts.clusterId
-  const stan =
-    opts.natssInstance || Nats.connect(clusterId, clientId, opts.options)
+  let clientId
+  let clusterId
+  let stan
+
+  if (opts.natssInstance) {
+    clientId = opts.natssInstance.clientID
+    clusterId = opts.natssInstance.clusterID
+    stan = opts.natssInstance
+  } else {
+    clientId = opts.clientId
+    clusterId = opts.clusterId
+    stan = Nats.connect(clusterId, clientId, opts.options)
+  }
+
   const subs = new Map()
   let connected = false
 
@@ -31,7 +39,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
       done(err)
     }
     hemera.log.error(err, 'stan error')
-    hemera.close(() => stan.close())
   })
 
   stan.on('connect', boot)
@@ -61,7 +68,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
         }
 
         const result = SafeStringify(req.data)
-
         if (result.error) {
           const error = new ParseError(
             `Message could not be stringified. Subject "${req.subject}"`
@@ -129,26 +135,25 @@ function hemeraNatsStreaming(hemera, opts, done) {
             ).causedBy(result.error)
             hemera.log.error(error)
           } else {
-            const data = {
-              sequence: msg.getSequence(),
-              message: result.value
-            }
-
-            hemera.act(
-              {
-                topic: hemeraTopic,
-                data
-              },
-              (err, resp) => {
-                if (!err) {
-                  msg.ack()
-                } else {
-                  hemera.log.error(
-                    `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
-                  )
-                }
+            let pattern = {
+              topic: hemeraTopic,
+              data: {
+                sequence: msg.getSequence(),
+                message: result.value
               }
-            )
+            }
+            if (typeof req.pattern === 'object') {
+              pattern = Object.assign(req.pattern, pattern)
+            }
+            hemera.act(pattern, (err, resp) => {
+              if (!err) {
+                msg.ack()
+              } else {
+                hemera.log.error(
+                  `Message could not be acknowledged. Subscription with topic '${hemeraTopic}'`
+                )
+              }
+            })
           }
         })
 
@@ -174,11 +179,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
           )
           return
         }
-        subs.get(req.subject).close()
-        subs.get(req.subject).once('closed', () => {
+        const sub = subs.get(req.subject)
+        if (sub) {
+          sub.close()
           subs.delete(req.subject)
           reply(null, true)
-        })
+        } else {
+          reply(new Error('Subscription could not be found'))
+        }
       }
     )
 
@@ -196,11 +204,14 @@ function hemeraNatsStreaming(hemera, opts, done) {
           )
           return
         }
-        subs.get(req.subject).unsubscribe()
-        subs.get(req.subject).once('unsubscribed', () => {
+        const sub = subs.get(req.subject)
+        if (sub) {
+          sub.unsubscribe()
           subs.delete(req.subject)
           reply(null, true)
-        })
+        } else {
+          reply(new Error('Subscription could not be found'))
+        }
       }
     )
 
