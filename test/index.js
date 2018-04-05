@@ -2,12 +2,12 @@
 
 const Hemera = require('nats-hemera')
 const Nats = require('nats')
+const NatsStreaming = require('node-nats-streaming')
 const HemeraNatsStreaming = require('./../')
 const Code = require('code')
 const HemeraTestsuite = require('hemera-testsuite')
 const ssc = require('./support/stan_server_control')
 
-const net = require('net')
 const os = require('os')
 const path = require('path')
 const nuid = require('nuid')
@@ -23,6 +23,7 @@ describe('Hemera-nats-streaming', function() {
   const topic = 'natss'
   let server
   let hemera
+  let natssInstance
 
   let serverDir = path.join(os.tmpdir(), nuid.next())
 
@@ -34,14 +35,14 @@ describe('Hemera-nats-streaming', function() {
         // wait until server is ready
         timers.setTimeout(function() {
           const nats = Nats.connect()
+          natssInstance = NatsStreaming.connect(clusterId, clientId)
           hemera = new Hemera(nats, {
             logLevel: 'error'
           })
           hemera.use(HemeraNatsStreaming, {
-            clusterId,
-            clientId
+            natssInstance
           })
-          hemera.ready(done)
+          hemera.ready(() => hemera.transport.flush(done))
         }, 250)
       }
     )
@@ -53,7 +54,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Subscribe', function(done) {
-    const subject = 'orderCreated'
+    const subject = 'orderCreated1'
     hemera.act(
       {
         topic,
@@ -71,7 +72,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Subscribe with options', function(done) {
-    const subject = 'orderCreated'
+    const subject = 'orderCreated2'
     hemera.act(
       {
         topic,
@@ -92,7 +93,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Subscribe and unsubscribe', function(done) {
-    const subject = 'orderCreated2'
+    const subject = 'orderCreated3'
     hemera.act(
       {
         topic,
@@ -106,7 +107,6 @@ describe('Hemera-nats-streaming', function() {
         expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
           true
         )
-
         hemera.act(
           {
             topic: `${topic}.clients.${clientId}`,
@@ -124,7 +124,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Subscribe, suspend and subscribe', function(done) {
-    const subject = 'orderCreated3'
+    const subject = 'orderCreated4'
     hemera.act(
       {
         topic,
@@ -164,7 +164,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Publish and subscribe', function(done) {
-    const subject = 'newNews'
+    const subject = 'orderCreated5'
     hemera.act(
       {
         topic,
@@ -203,7 +203,7 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('List active subscribtions', function(done) {
-    const subject = 'orderCreated4'
+    const subject = 'orderCreated6'
     hemera.act(
       {
         topic,
@@ -236,7 +236,6 @@ describe('Hemera-nats-streaming', function() {
   })
 
   it('Should expose errors', function(done) {
-    const subject = 'newNews'
     expect(hemera.natss.ParseError).to.be.exists()
     done()
   })
