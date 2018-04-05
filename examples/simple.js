@@ -8,11 +8,9 @@ const hemera = new Hemera(nats, {
   logLevel: 'debug',
   childLogger: true
 })
-const clientId = 'test-client'
-const clusterId = 'test-cluster'
 hemera.use(hemeraNatsStreaming, {
-  clusterId,
-  clientId,
+  clusterId: 'test-cluster',
+  clientId: 'test-client',
   options: {} // NATS/STAN options
 })
 
