@@ -36,26 +36,17 @@ hemera.use(hemeraNatsStreaming, {
 Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `news` you will receive all messages on topic `natss.news` in hemera.
 
 ```js
-hemera.act({
-  topic: 'natss',
-  cmd: 'subscribe',
-  subject: 'news'
+  hemera.natsStreaming.add({
+    cmd: 'subscribe',
+    subject: 'news'
 
-  queue: 'news.workers', // (optional) nats-streaming queue group
-  options: {}, // (optional) nats-streaming transport options
-  pattern: {} //  (optional) the pattern which arrive hemera
+    queue: 'news.workers', // (optional) nats-streaming queue group
+    options: {}, // (optional) nats-streaming transport options
+    pattern: {} // (optional) the pattern which arrive hemera
 })
 ```
 
-Returns an object like:
-
-```js
-{
-  "subject": "news",
-  "queue": "foo.workers",
-  "options": { /*applied options*/ },
-}
-```
+Returns the [subscription](https://github.com/nats-io/node-nats-streaming/blob/7e66cf4c047742b82280a7ccb60295f449ed3b7a/lib/stan.js#L574) object of nats-streaming client.
 
 ### Available options:
 
@@ -69,53 +60,12 @@ Returns an object like:
 * manualAckMode: (`boolean`, default: `true`)
 * ackWait (`integer`, default: `30000` ms) If an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message.
 
-## Unsubscribe
-
-Removes the subscription from NATS-Streaming server. Returns `true` or `false` when subscription could be unsubscribed.
-
-```js
-hemera.act({
-  topic: 'natss.clients.{clientId}',
-  cmd: 'unsubscribe',
-  subject: 'news'
-})
-```
-
-## Suspend
-
-Suspend the subscription from NATS-Streaming server. You can active it if you call `subscribe` again. Returns `true` or `false` when subscription could be suspended.
-
-```js
-hemera.act({
-  topic: 'natss.clients.{clientId}',
-  cmd: 'suspend',
-  subject: 'news'
-})
-```
-
 ## List active subscriptions
 
 List all active subscriptions from a client.
 
 ```js
-hemera.act({
-  topic: 'natss.clients.{clientId}',
-  cmd: 'list'
-})
-```
-
-Returns a list of objects like:
-
-```js
-;[
-  {
-    subject: 'news',
-    queue: 'foo.workers',
-    options: {
-      /*applied options*/
-    }
-  }
-]
+hemera.natsStreaming.subscriptions
 ```
 
 ## Publish in hemera

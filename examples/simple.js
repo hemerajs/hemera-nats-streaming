@@ -23,59 +23,35 @@ hemera.ready(() => {
    * Create nats-streaming-subscription
    */
   const subject = 'news'
-  hemera.act(
-    {
-      topic,
-      cmd: 'subscribe',
-      subject
-    },
-    function(err, resp) {
-      if (err) {
-        this.log.error(err)
-      }
-      this.log.info(resp, 'ACK')
 
-      /**
-       * Publish an event from hemera
-       */
-      hemera.act(
-        {
-          topic,
-          cmd: 'publish',
-          subject,
-          data: {
-            a: 1
-          }
-        },
-        function(err, resp) {
-          if (err) {
-            this.log.error(err)
-          }
-          this.log.info(resp, 'PUBLISHED')
-          hemera.act(
-            {
-              topic: `${topic}.clients.${clientId}`,
-              cmd: 'unsubscribe',
-              subject
-            },
-            (err, resp) => {
-              if (err) {
-                this.log.error(err)
-              }
-              this.log.info(resp, 'UNSUBSCRIBED')
-            }
-          )
-        }
-      )
-    }
-  )
+  hemera.natsStreaming.add({
+    subject
+  })
+
+  hemera
+    .act({
+      topic,
+      cmd: 'publish',
+      subject,
+      data: {
+        a: 1
+      }
+    })
+    .then(() =>
+      hemera.act({
+        topic: `${topic}.clients.${clientId}`,
+        cmd: 'unsubscribe',
+        subject
+      })
+    )
+    .catch(err => console.error(err))
 
   /**
    * Add listener for nats-streaming events
    */
   hemera.add(
     {
-      topic: `${topic}.news`
+      topic: `${topic}.${subject}`
     },
     function(req, reply) {
       this.log.info(req, 'RECEIVED')

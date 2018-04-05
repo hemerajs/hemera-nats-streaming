@@ -55,227 +55,136 @@ describe('Hemera-nats-streaming', function() {
 
   it('Subscribe', function(done) {
     const subject = 'orderCreated1'
-    hemera.act(
-      {
-        topic,
+    const sub = hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+    expect(sub.subject).to.be.equals(subject)
+    expect(sub.opts.manualAcks).to.be.equals(true)
+    done()
+  })
+
+  it('Can not subscribe the same subject twice', function() {
+    const subject = 'orderCreated2'
+    hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+
+    try {
+      hemera.natsStreaming.add({
         cmd: 'subscribe',
         subject
-      },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-        expect(resp.subject).to.be.equals(subject)
-        expect(resp.options.durableName).to.be.not.exists()
-        expect(resp.options.manualAcks).to.be.equals(true)
-        done()
-      }
-    )
+      })
+    } catch (err) {
+      expect(err).to.be.exists()
+      expect(err.message).to.be.equals(
+        "Subject 'string' can only be subscribed once on this client"
+      )
+    }
   })
 
   it('Subscribe with options', function(done) {
-    const subject = 'orderCreated2'
-    hemera.act(
-      {
-        topic,
-        cmd: 'subscribe',
-        subject,
-        options: {
-          durableName: 'test'
-        }
-      },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-        expect(resp.subject).to.be.equals(subject)
-        expect(resp.options.durableName).to.be.equals('test')
-        expect(resp.options.manualAcks).to.be.equals(true)
-        done()
+    const subject = 'orderCreated3'
+    const sub = hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject,
+      options: {
+        durableName: 'test'
       }
-    )
+    })
+    expect(sub.subject).to.be.equals(subject)
+    expect(sub.opts.manualAcks).to.be.equals(true)
+    expect(sub.opts.durableName).to.be.equals('test')
+    done()
   })
 
   it('Subscribe and unsubscribe', function(done) {
-    const subject = 'orderCreated3'
-    hemera.act(
-      {
-        topic,
-        cmd: 'subscribe',
-        subject
-      },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-        expect(resp.subject).to.be.equals(subject)
-        // after subscription two server actions are added suspend and unsubscribe
-        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
-          true
-        )
-        hemera.act(
-          {
-            topic: `${topic}.clients.${clientId}`,
-            cmd: 'unsubscribe',
-            subject
-          },
-          function(err, resp) {
-            expect(err).to.be.not.exists()
-            expect(resp).to.be.equals(true)
-            done()
-          }
-        )
-      }
-    )
+    const subject = 'orderCreated4'
+    const sub = hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+    sub.unsubscribe()
+    done()
   })
 
   it('Subscribe, suspend and subscribe', function(done) {
-    const subject = 'orderCreated4'
-    hemera.act(
-      {
-        topic,
-        cmd: 'subscribe',
-        subject
-      },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-        expect(resp.subject).to.be.equals(subject)
-
-        hemera.act(
-          {
-            topic: `${topic}.clients.${clientId}`,
-            cmd: 'suspend',
-            subject
-          },
-          function(err, resp) {
-            expect(err).to.be.not.exists()
-            expect(resp).to.be.equals(true)
-
-            hemera.act(
-              {
-                topic,
-                cmd: 'subscribe',
-                subject
-              },
-              function(err, resp) {
-                expect(err).to.be.not.exists()
-                expect(resp.subject).to.be.equals(subject)
-                done()
-              }
-            )
-          }
-        )
-      }
-    )
+    const subject = 'orderCreated5'
+    const sub = hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+    sub.close()
+    hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+    done()
   })
 
   it('Publish and subscribe', function(done) {
-    const subject = 'orderCreated5'
-    hemera.act(
+    const subject = 'orderCreated6'
+
+    hemera.add(
       {
-        topic,
-        cmd: 'subscribe',
-        subject
+        topic: `${topic}.${subject}`
       },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-
-        hemera.add(
-          {
-            topic: `${topic}.${subject}`
-          },
-          (req, cb) => {
-            expect(req.data.message).to.be.equals({ foo: 'bar' })
-            expect(req.data.sequence).to.be.number()
-            cb()
-            done()
-          }
-        )
-
-        hemera.act(
-          {
-            topic,
-            cmd: 'publish',
-            subject,
-            data: { foo: 'bar' }
-          },
-          (err, resp) => {
-            expect(err).to.be.not.exists()
-            expect(resp).to.be.exists()
-          }
-        )
+      (req, cb) => {
+        expect(req.data.message).to.be.equals({ foo: 'bar' })
+        expect(req.data.sequence).to.be.number()
+        cb()
+        done()
       }
     )
+
+    hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject
+    })
+    hemera
+      .act({
+        topic,
+        cmd: 'publish',
+        subject,
+        data: { foo: 'bar' }
+      })
+      .catch(done)
   })
 
   it('Publish and subscribe with custom request pattern', function(done) {
-    const subject = 'orderCreated5'
-    hemera.act(
+    const subject = 'orderCreated7'
+
+    hemera.add(
       {
-        topic,
-        cmd: 'subscribe',
-        subject,
-        pattern: {
-          a: 1
-        }
+        topic: `${topic}.${subject}`
       },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-
-        hemera.add(
-          {
-            topic: `${topic}.${subject}`
-          },
-          (req, cb) => {
-            expect(req.data.message).to.be.equals({ foo: 'bar' })
-            expect(req.data.sequence).to.be.number()
-            expect(req.a).to.be.number(1)
-            cb()
-            done()
-          }
-        )
-
-        hemera.act(
-          {
-            topic,
-            cmd: 'publish',
-            subject,
-            data: { foo: 'bar' }
-          },
-          (err, resp) => {
-            expect(err).to.be.not.exists()
-            expect(resp).to.be.exists()
-          }
-        )
+      (req, cb) => {
+        expect(req.data.message).to.be.equals({ foo: 'bar' })
+        expect(req.data.sequence).to.be.number()
+        expect(req.a).to.be.number()
+        cb()
+        done()
       }
     )
+
+    hemera.natsStreaming.add({
+      cmd: 'subscribe',
+      subject,
+      pattern: { a: 1 }
+    })
+    hemera
+      .act({
+        topic,
+        cmd: 'publish',
+        subject,
+        data: { foo: 'bar' }
+      })
+      .catch(done)
   })
 
-  it('List active subscribtions', function(done) {
-    const subject = 'orderCreated6'
-    hemera.act(
-      {
-        topic,
-        cmd: 'subscribe',
-        subject
-      },
-      function(err, resp) {
-        expect(err).to.be.not.exists()
-        expect(resp.subject).to.be.equals(subject)
-        // after subscription two server actions are added suspend and unsubscribe
-        expect(hemera.topics.has(`${topic}.clients.${clientId}`)).to.be.equals(
-          true
-        )
-
-        hemera.act(
-          {
-            topic: `${topic}.clients.${clientId}`,
-            cmd: 'list'
-          },
-          function(err, resp) {
-            expect(err).to.be.not.exists()
-            expect(resp).to.be.an.array()
-            expect(resp[0].subject).to.be.string()
-            expect(resp[0].options.manualAcks).to.be.boolean()
-            done()
-          }
-        )
-      }
-    )
+  it('Should expose subscribtions', function(done) {
+    expect(hemera.natsStreaming.subscriptions).to.be.exists()
   })
 
   it('Should expose errors', function(done) {
