@@ -99,8 +99,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
   }
 
   hemera.decorate('natsStreaming', {
-    add: addSubscription,
-    subscriptions: subs
+    add: addSubscription
   })
 
   hemera.ext('onClose', (hemera, done) => {

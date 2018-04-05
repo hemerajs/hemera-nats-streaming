@@ -183,10 +183,6 @@ describe('Hemera-nats-streaming', function() {
       .catch(done)
   })
 
-  it('Should expose subscribtions', function(done) {
-    expect(hemera.natsStreaming.subscriptions).to.be.exists()
-  })
-
   it('Should expose errors', function(done) {
     expect(hemera.natss.ParseError).to.be.exists()
     done()

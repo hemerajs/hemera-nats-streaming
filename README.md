@@ -60,14 +60,6 @@ Returns the [subscription](https://github.com/nats-io/node-nats-streaming/blob/7
 * manualAckMode: (`boolean`, default: `true`)
 * ackWait (`integer`, default: `30000` ms) If an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message.
 
-## List active subscriptions
-
-List all active subscriptions from a client.
-
-```js
-hemera.natsStreaming.subscriptions
-```
-
 ## Publish in hemera
 
 Publish a message to NATS-Streaming server.
