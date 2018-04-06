@@ -21,7 +21,7 @@ hemera.ready(() => {
   /**
    * Create nats-streaming subscription
    */
-  const sub = hemera.natsStreaming.add({
+  const sub = hemera.natss.add({
     subject
   })
 

@@ -36,7 +36,7 @@ hemera.use(hemeraNatsStreaming, {
 Create a new NATS-Streaming subscription on the given subject. Under the hood all messages are forwarded to the hemera subscriber with request-reply semantics. If you create a subscription on subject `news` you will receive all messages on topic `natss.news` in hemera.
 
 ```js
-  hemera.natsStreaming.add({
+  hemera.natss.add({
     cmd: 'subscribe',
     subject: 'news'
 

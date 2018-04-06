@@ -55,7 +55,7 @@ describe('Hemera-nats-streaming', function() {
 
   it('Subscribe', function(done) {
     const subject = 'orderCreated1'
-    const sub = hemera.natsStreaming.add({
+    const sub = hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
@@ -66,13 +66,13 @@ describe('Hemera-nats-streaming', function() {
 
   it('Can not subscribe the same subject twice', function() {
     const subject = 'orderCreated2'
-    hemera.natsStreaming.add({
+    hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
 
     try {
-      hemera.natsStreaming.add({
+      hemera.natss.add({
         cmd: 'subscribe',
         subject
       })
@@ -86,7 +86,7 @@ describe('Hemera-nats-streaming', function() {
 
   it('Subscribe with options', function(done) {
     const subject = 'orderCreated3'
-    const sub = hemera.natsStreaming.add({
+    const sub = hemera.natss.add({
       cmd: 'subscribe',
       subject,
       options: {
@@ -101,7 +101,7 @@ describe('Hemera-nats-streaming', function() {
 
   it('Subscribe and unsubscribe', function(done) {
     const subject = 'orderCreated4'
-    const sub = hemera.natsStreaming.add({
+    const sub = hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
@@ -111,12 +111,12 @@ describe('Hemera-nats-streaming', function() {
 
   it('Subscribe, suspend and subscribe', function(done) {
     const subject = 'orderCreated5'
-    const sub = hemera.natsStreaming.add({
+    const sub = hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
     sub.close()
-    hemera.natsStreaming.add({
+    hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
@@ -138,7 +138,7 @@ describe('Hemera-nats-streaming', function() {
       }
     )
 
-    hemera.natsStreaming.add({
+    hemera.natss.add({
       cmd: 'subscribe',
       subject
     })
@@ -168,7 +168,7 @@ describe('Hemera-nats-streaming', function() {
       }
     )
 
-    hemera.natsStreaming.add({
+    hemera.natss.add({
       cmd: 'subscribe',
       subject,
       pattern: { a: 1 }

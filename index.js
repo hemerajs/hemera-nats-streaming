@@ -8,6 +8,7 @@ const Nats = require('node-nats-streaming')
 function hemeraNatsStreaming(hemera, opts, done) {
   const topic = 'natss'
   const ParseError = hemera.createError('ParseError')
+  let connected = false
   let clientId
   let clusterId
   let stan
@@ -22,23 +23,82 @@ function hemeraNatsStreaming(hemera, opts, done) {
     stan = Nats.connect(clusterId, clientId, opts.options)
   }
 
-  const subs = new Map()
-  let connected = false
-
   hemera.decorate('natss', {
+    add: addSubscription,
     ParseError
   })
+
+  hemera.ext('onClose', onClose)
+  stan.on('error', onError)
+  stan.on('connect', onConnect)
+
+  function onClose(hemera, done) {
+    hemera.log.debug('nats-streaming closing ...')
+    done()
+  }
+
+  function onError(err) {
+    if (connected === false) {
+      done(err)
+    }
+    hemera.log.error(err, 'stan error')
+  }
+
+  function onConnect() {
+    connected = true
+    hemera
+      .add({
+        topic,
+        cmd: 'publish'
+      })
+      .use(validateRequest)
+      .end((req, reply) => {
+        const result = SafeStringify(req.data)
+        if (result.error) {
+          const error = new ParseError(
+            `Message could not be stringified. Subject "${req.subject}"`
+          ).causedBy(result.error)
+          hemera.log.error(error)
+          reply(error)
+        } else {
+          stan.publish(req.subject, result.value, function publishHandler(
+            err,
+            guid
+          ) {
+            if (err) {
+              reply(err)
+            } else {
+              reply(null, guid)
+            }
+          })
+        }
+      })
+    done()
+  }
+
+  function validateRequest(req, reply, next) {
+    const pattern = req.payload.pattern
+    if (typeof pattern.subject !== 'string') {
+      const error = new Error(
+        `Subject must be from type 'string' but got '${typeof pattern.subject}'`
+      )
+      next(error)
+      return
+    }
+    if (!Array.isArray(pattern.data) && typeof pattern.data !== 'object') {
+      const error = new Error(
+        `Data must be from type 'object' or 'array' but got '${typeof pattern.data}'`
+      )
+      next(error)
+      return
+    }
+    next()
+  }
 
   function addSubscription(subDef) {
     if (typeof subDef.subject !== 'string' || !subDef.subject) {
       throw new Error(
         `Subject must be not empty and from type 'string' but got '${typeof subDef.subject}'`
-      )
-    }
-
-    if (subs.has(subDef.subject)) {
-      throw new Error(
-        `Subject '${typeof subDef.subject}' can only be subscribed once on this client`
       )
     }
 
@@ -54,7 +114,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
     }
 
     const sub = stan.subscribe(subDef.subject, subDef.queue, opts)
-    subs.set(subDef.subject, sub)
 
     hemera.log.debug(
       opts,
@@ -96,72 +155,6 @@ function hemeraNatsStreaming(hemera, opts, done) {
     })
 
     return sub
-  }
-
-  hemera.decorate('natsStreaming', {
-    add: addSubscription
-  })
-
-  hemera.ext('onClose', (hemera, done) => {
-    hemera.log.debug('nats-streaming closing ...')
-    done()
-  })
-
-  stan.on('error', err => {
-    if (connected === false) {
-      done(err)
-    }
-    hemera.log.error(err, 'stan error')
-  })
-
-  stan.on('connect', boot)
-
-  function boot() {
-    hemera.add(
-      {
-        topic,
-        cmd: 'publish'
-      },
-      (req, reply) => {
-        if (typeof req.subject !== 'string') {
-          reply(
-            new Error(
-              `Subject must be from type 'string' but got '${typeof req.subject}'`
-            )
-          )
-          return
-        }
-        if (!Array.isArray(req.data) && typeof req.data !== 'object') {
-          reply(
-            new Error(
-              `Data must be from type 'object' or 'array' but got '${typeof req.data}'`
-            )
-          )
-          return
-        }
-        const result = SafeStringify(req.data)
-        if (result.error) {
-          const error = new ParseError(
-            `Message could not be stringified. Subject "${req.subject}"`
-          ).causedBy(result.error)
-          hemera.log.error(error)
-          reply(error)
-        } else {
-          stan.publish(req.subject, result.value, function publishHandler(
-            err,
-            guid
-          ) {
-            if (err) {
-              reply(err)
-            } else {
-              reply(null, guid)
-            }
-          })
-        }
-      }
-    )
-    connected = true
-    done()
   }
 }
 
