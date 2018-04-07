@@ -95,14 +95,13 @@ hemera.add(
 
 ## Why you don't implement nats-streaming in hemera?
 
-They use the same server but the purpose is quite different with hemera we want to provide a simple toolkit without any delivery guarantee. NATS-streaming was created to fill this gap with a mimimalistic protocol extension. We can use this feature while creating a simple bridge to nats-streaming. It will create a minimal roundtrip overhead but it's tolerable. The greatest fact is that we can run both technologies side by side\* with one nats-streaming-server.
+They use the same server but the purpose is quite different with hemera we want to provide a simple toolkit without any delivery guarantee. NATS-streaming was created to fill this gap with a mimimalistic protocol extension. We can use this feature while creating a simple bridge to nats-streaming. It will create a minimal roundtrip overhead but it's tolerable. The greatest fact is that we can run both technologies side by side with one nats-streaming-server.
 
 ## Why we need NATS-Streaming?
 
-Usually we would use RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing a reliable driver is hard. With NATS-Streaming we can use the same technology which hemera based on to combine both aspects without to increase the complexity.
+Usually we would use RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing a reliable driver is hard. With NATS-Streaming we can use the same technology.
 
 ## Caveats
 
-* Only JSON support
-* NATS Streaming subscriptions do not support wildcards but there is a [proposal](https://github.com/nats-io/nats-streaming-server/issues/340).
-* Messages from NATS-Streaming are forwarded to a NATS subscriber. We can only support (request / reply), (queue-group) semantic (no fanout) to ensure message acknowledgement.
+* The Hemera proxy subscription can only encode/decode JSON at the moment.
+* Messages from NATS-Streaming are forwarded to a Hemera subscriber. We can only support (request / reply), (queue-group) semantic (no fanout) to ensure message acknowledgement.
