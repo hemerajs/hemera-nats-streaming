@@ -37,9 +37,7 @@ Create a new NATS-Streaming subscription on the given subject. Under the hood al
 
 ```js
   hemera.natss.add({
-    cmd: 'subscribe',
     subject: 'news'
-
     queue: 'news.workers', // (optional) nats-streaming queue group
     options: {}, // (optional) nats-streaming transport options
     pattern: {} // (optional) the pattern which arrive hemera

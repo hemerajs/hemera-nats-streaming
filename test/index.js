@@ -56,7 +56,6 @@ describe('Hemera-nats-streaming', function() {
   it('Subscribe', function(done) {
     const subject = 'orderCreated1'
     const sub = hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
     expect(sub.subject).to.be.equals(subject)
@@ -67,13 +66,11 @@ describe('Hemera-nats-streaming', function() {
   it('Can not subscribe the same subject twice', function() {
     const subject = 'orderCreated2'
     hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
 
     try {
       hemera.natss.add({
-        cmd: 'subscribe',
         subject
       })
     } catch (err) {
@@ -87,7 +84,6 @@ describe('Hemera-nats-streaming', function() {
   it('Subscribe with options', function(done) {
     const subject = 'orderCreated3'
     const sub = hemera.natss.add({
-      cmd: 'subscribe',
       subject,
       options: {
         durableName: 'test'
@@ -102,7 +98,6 @@ describe('Hemera-nats-streaming', function() {
   it('Subscribe and unsubscribe', function(done) {
     const subject = 'orderCreated4'
     const sub = hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
     sub.unsubscribe()
@@ -112,12 +107,10 @@ describe('Hemera-nats-streaming', function() {
   it('Subscribe, suspend and subscribe', function(done) {
     const subject = 'orderCreated5'
     const sub = hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
     sub.close()
     hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
     done()
@@ -139,7 +132,6 @@ describe('Hemera-nats-streaming', function() {
     )
 
     hemera.natss.add({
-      cmd: 'subscribe',
       subject
     })
     hemera
@@ -169,7 +161,6 @@ describe('Hemera-nats-streaming', function() {
     )
 
     hemera.natss.add({
-      cmd: 'subscribe',
       subject,
       pattern: { a: 1 }
     })
