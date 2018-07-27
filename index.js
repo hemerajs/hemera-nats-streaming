@@ -34,6 +34,8 @@ function hemeraNatsStreaming(hemera, opts, done) {
 
   function onClose(hemera, done) {
     hemera.log.debug('nats-streaming closing ...')
+    stan.close()
+    hemera.log.debug('nats-streaming nats connection closed')
     done()
   }
 
