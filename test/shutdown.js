@@ -5,7 +5,6 @@ const Nats = require('nats')
 const NatsStreaming = require('node-nats-streaming')
 const HemeraNatsStreaming = require('./../')
 const Code = require('code')
-const HemeraTestsuite = require('hemera-testsuite')
 const ssc = require('./support/stan_server_control')
 
 const os = require('os')
@@ -35,7 +34,10 @@ describe('Hemera-nats-streaming graceful shutdown', function() {
         // wait until server is ready
         timers.setTimeout(function() {
           const nats = Nats.connect()
-          natssInstance = NatsStreaming.connect(clusterId, clientId)
+          natssInstance = NatsStreaming.connect(
+            clusterId,
+            clientId
+          )
           hemera = new Hemera(nats, {
             logLevel: 'error'
           })
@@ -55,7 +57,7 @@ describe('Hemera-nats-streaming graceful shutdown', function() {
   it('Should close the connection', function(done) {
     hemera.close(() => {
       expect(natssInstance.isClosed()).to.be.equals(true)
-    done()
+      done()
     })
   })
 })
