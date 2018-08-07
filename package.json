@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "hemera-plugin": "^1.3.0",
-    "node-nats-streaming": "^0.0.28"
+    "node-nats-streaming": "^0.0.41"
   },
   "devDependencies": {
     "code": "^3.0.2",
