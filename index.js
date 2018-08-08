@@ -20,7 +20,11 @@ function hemeraNatsStreaming(hemera, opts, done) {
   } else {
     clientId = opts.clientId
     clusterId = opts.clusterId
-    stan = Nats.connect(clusterId, clientId, opts.options)
+    stan = Nats.connect(
+      clusterId,
+      clientId,
+      opts.options
+    )
   }
 
   hemera.decorate('natss', {

@@ -35,9 +35,12 @@ describe('Hemera-nats-streaming', function() {
         // wait until server is ready
         timers.setTimeout(function() {
           const nats = Nats.connect()
-          natssInstance = NatsStreaming.connect(clusterId, clientId)
+          natssInstance = NatsStreaming.connect(
+            clusterId,
+            clientId
+          )
           hemera = new Hemera(nats, {
-            logLevel: 'error'
+            logLevel: 'debug'
           })
           hemera.use(HemeraNatsStreaming, {
             natssInstance
@@ -60,6 +63,7 @@ describe('Hemera-nats-streaming', function() {
     })
     expect(sub.subject).to.be.equals(subject)
     expect(sub.opts.manualAcks).to.be.equals(true)
+
     done()
   })
 
@@ -100,20 +104,28 @@ describe('Hemera-nats-streaming', function() {
     const sub = hemera.natss.add({
       subject
     })
-    sub.unsubscribe()
-    done()
+    setTimeout(function() {
+      sub.unsubscribe()
+      sub.once('unsubscribed', function() {
+        done()
+      })
+    }, 150)
   })
 
   it('Subscribe, suspend and subscribe', function(done) {
     const subject = 'orderCreated5'
-    const sub = hemera.natss.add({
+    let sub = hemera.natss.add({
       subject
     })
-    sub.close()
-    hemera.natss.add({
-      subject
-    })
-    done()
+    setTimeout(function() {
+      sub.close()
+    }, 150)
+    setTimeout(function() {
+      sub = hemera.natss.add({
+        subject
+      })
+      done()
+    }, 150)
   })
 
   it('Publish and subscribe', function(done) {

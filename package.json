@@ -15,6 +15,7 @@
     "lint": "eslint ./**/*.js",
     "test": "nyc mocha -t 5000 --exit ./test/**/*.js",
     "coverage": "npm run test && nyc report --reporter=html",
+    "format": "prettier --write ./**/*.js",
     "patch": "np patch --yolo",
     "minor": "np minor --yolo",
     "major": "np major --yolo"
@@ -29,13 +30,13 @@
     "code": "^3.0.2",
     "eslint": "^4.19.1",
     "eslint-config-hemera": "0.0.6",
-    "hemera-testsuite": "^4.0.2",
-    "mocha": "^5.1.1",
-    "nats": "^0.8.4",
-    "nats-hemera": "^5.4.2",
-    "np": "^2.20.1",
-    "nuid": "^0.6.14",
-    "nyc": "^11.7.1",
-    "prettier": "^1.12.1"
+    "hemera-testsuite": "^4.1.0",
+    "mocha": "^5.2.0",
+    "nats": "^1.0.1",
+    "nats-hemera": "^5.8.9",
+    "np": "^3.0.4",
+    "nuid": "^1.0.0",
+    "nyc": "^12.0.2",
+    "prettier": "^1.14.1"
   }
 }
