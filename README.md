@@ -97,15 +97,15 @@ hemera.add(
 - [`Why we need NATS-Streaming?`](#why-we-need-nats-streaming)
 - [`What's the difference when I use NATS-Streaming directly?`](#whats-the-difference-when-I-use-nats-streaming-directly)
 
-## Why you don't implement nats-streaming in hemera?
+### Why you don't implement nats-streaming in hemera?
 
 They use the same server but the purpose is quite different with hemera we want to provide a simple toolkit without any delivery guarantee. NATS-streaming was created to fill this gap with a mimimalistic protocol extension. We can use this feature while creating a simple bridge to nats-streaming. It will create a minimal roundtrip overhead but it's tolerable. The greatest fact is that we can run both technologies side by side with one nats-streaming-server.
 
-## Why we need NATS-Streaming?
+### Why we need NATS-Streaming?
 
 Usually we would use a queue like RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing or finding a reliable driver is hard. The authors of NATS-Streaming and NATS know this and that's the reason why they made it as easy as possible.
 
-## What's the difference when I use NATS-Streaming directly?
+### What's the difference when I use NATS-Streaming directly?
 
 That's good question. In NATS-Streaming there aren't request/reply semantic. If you publish something it doesn't mean that the requestor has received it but it will guarantee that the messages are persistent and replayed in the way you defined it.
 
