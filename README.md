@@ -48,15 +48,15 @@ Returns the [subscription](https://github.com/nats-io/node-nats-streaming/blob/7
 
 ### Available options:
 
-* startWithLastReceived `(boolean)` Subscribe starting with the most recently published value
-* deliverAllAvailable `(boolean)` Receive all stored values in order
-* startAtSequence: `(integer)` Receive all messages starting at a specific sequence number
-* startTime: `(Date)` Subscribe starting at a specific time
-* startAtTimeDelta `(integer)`
-* durableName `(string)` Create a durable subscription
-* maxInFlight `(integer)` The maximum number of outstanding acknowledgements
-* manualAckMode: (`boolean`, default: `true`)
-* ackWait (`integer`, default: `30000` ms) If an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message.
+- startWithLastReceived `(boolean)` Subscribe starting with the most recently published value
+- deliverAllAvailable `(boolean)` Receive all stored values in order
+- startAtSequence: `(integer)` Receive all messages starting at a specific sequence number
+- startTime: `(Date)` Subscribe starting at a specific time
+- startAtTimeDelta `(integer)`
+- durableName `(string)` Create a durable subscription
+- maxInFlight `(integer)` The maximum number of outstanding acknowledgements
+- manualAckMode: (`boolean`, default: `true`)
+- ackWait (`integer`, default: `30000` ms) If an acknowledgement is not received within the configured timeout interval, NATS Streaming will attempt redelivery of the message.
 
 ## Publish in hemera
 
@@ -88,8 +88,14 @@ hemera.add(
 
 ## Plugin decorators
 
-* hemera.natss.add
-* hemera.natss.ParseError
+- hemera.natss.add
+- hemera.natss.ParseError
+
+## FAQ
+
+- [`Why you don't implement nats-streaming in hemera?`](#why-you-dont-implement-nats-streaming-in-hemera)
+- [`Why we need NATS-Streaming?`](#why-we-need-nats-streaming)
+- [`What's the difference when I use NATS-Streaming directly?`](#whats-the-difference-when-I-use-nats-streaming-directly)
 
 ## Why you don't implement nats-streaming in hemera?
 
@@ -97,9 +103,13 @@ They use the same server but the purpose is quite different with hemera we want 
 
 ## Why we need NATS-Streaming?
 
-Usually we would use RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing a reliable driver is hard. With NATS-Streaming we can use the same technology.
+Usually we would use a queue like RabbitMQ to ensure reliable message delivery but maintaining RabbitMQ as well as writing or finding a reliable driver is hard. The authors of NATS-Streaming and NATS know this and that's the reason why they made it as easy as possible.
+
+## What's the difference when I use NATS-Streaming directly?
+
+That's good question. In NATS-Streaming there aren't request/reply semantic. If you publish something it doesn't mean that the requestor has received it but it will guarantee that the messages are persistent and replayed in the way you defined it.
 
 ## Caveats
 
-* The Hemera proxy subscription can only encode/decode JSON at the moment.
-* Messages from NATS-Streaming are forwarded to a Hemera subscriber. We can only support (request / reply), (queue-group) semantic (no fanout) to ensure message acknowledgement.
+- The Hemera proxy subscription can only encode/decode JSON at the moment.
+- Messages from NATS-Streaming are forwarded to a Hemera subscriber. We can only support (request / reply), (queue-group) semantic (no fanout) to ensure message acknowledgement.

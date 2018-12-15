@@ -26,8 +26,8 @@ hemera.ready(() => {
   })
 
   /*
-  * Send message to nats-streaming
-  */
+   * Send message to nats-streaming
+   */
   hemera
     .act({
       topic,

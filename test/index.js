@@ -5,7 +5,6 @@ const Nats = require('nats')
 const NatsStreaming = require('node-nats-streaming')
 const HemeraNatsStreaming = require('./../')
 const Code = require('code')
-const HemeraTestsuite = require('hemera-testsuite')
 const ssc = require('./support/stan_server_control')
 
 const os = require('os')
@@ -19,7 +18,6 @@ describe('Hemera-nats-streaming', function() {
   let PORT = 4222
   let clusterId = 'test-cluster'
   let clientId = 'test-client'
-  let uri = 'nats://localhost:' + PORT
   const topic = 'natss'
   let server
   let hemera

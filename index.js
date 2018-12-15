@@ -167,7 +167,7 @@ function hemeraNatsStreaming(hemera, opts, done) {
 }
 
 const plugin = Hp(hemeraNatsStreaming, {
-  hemera: '^5.0.0',
+  hemera: '>=5.0.0',
   name: require('./package.json').name
 })
 

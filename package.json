@@ -23,8 +23,8 @@
   "author": "Dustin Deus (https://github.com/StarpTech)",
   "license": "MIT",
   "dependencies": {
-    "hemera-plugin": "^1.3.0",
-    "node-nats-streaming": "^0.0.41"
+    "hemera-plugin": "^1.3.3",
+    "node-nats-streaming": "^0.0.51"
   },
   "devDependencies": {
     "code": "^3.0.2",
@@ -33,10 +33,10 @@
     "hemera-testsuite": "^4.1.0",
     "mocha": "^5.2.0",
     "nats": "^1.0.1",
-    "nats-hemera": "^5.8.9",
-    "np": "^3.0.4",
+    "nats-hemera": "^6.1.1",
+    "np": "^3.1.0",
     "nuid": "^1.0.0",
-    "nyc": "^12.0.2",
-    "prettier": "^1.14.1"
+    "nyc": "^13.0.1",
+    "prettier": "^1.15.3"
   }
 }
