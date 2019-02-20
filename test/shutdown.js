@@ -27,27 +27,21 @@ describe('Hemera-nats-streaming graceful shutdown', function() {
   let serverDir = path.join(os.tmpdir(), nuid.next())
 
   before(function(done) {
-    server = ssc.start_server(
-      PORT,
-      ['--store', 'FILE', '--dir', serverDir],
-      function() {
-        // wait until server is ready
-        timers.setTimeout(function() {
-          const nats = Nats.connect()
-          natssInstance = NatsStreaming.connect(
-            clusterId,
-            clientId
-          )
-          hemera = new Hemera(nats, {
-            logLevel: 'error'
-          })
-          hemera.use(HemeraNatsStreaming, {
-            natssInstance
-          })
-          hemera.ready(() => hemera.transport.flush(done))
-        }, 250)
-      }
-    )
+    server = ssc.start_server(PORT, ['--store', 'FILE', '--dir', serverDir], function(err) {
+      expect(err).to.be.not.exists()
+      // wait until server is ready
+      timers.setTimeout(function() {
+        const nats = Nats.connect()
+        natssInstance = NatsStreaming.connect(clusterId, clientId)
+        hemera = new Hemera(nats, {
+          logLevel: 'error'
+        })
+        hemera.use(HemeraNatsStreaming, {
+          natssInstance
+        })
+        hemera.ready(() => hemera.transport.flush(done))
+      }, 250)
+    })
   })
 
   after(function() {

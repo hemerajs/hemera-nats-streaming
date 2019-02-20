@@ -26,27 +26,21 @@ describe('Hemera-nats-streaming', function() {
   let serverDir = path.join(os.tmpdir(), nuid.next())
 
   before(function(done) {
-    server = ssc.start_server(
-      PORT,
-      ['--store', 'FILE', '--dir', serverDir],
-      function() {
-        // wait until server is ready
-        timers.setTimeout(function() {
-          const nats = Nats.connect()
-          natssInstance = NatsStreaming.connect(
-            clusterId,
-            clientId
-          )
-          hemera = new Hemera(nats, {
-            logLevel: 'debug'
-          })
-          hemera.use(HemeraNatsStreaming, {
-            natssInstance
-          })
-          hemera.ready(() => hemera.transport.flush(done))
-        }, 250)
-      }
-    )
+    server = ssc.start_server(PORT, ['--store', 'FILE', '--dir', serverDir], function(err) {
+      expect(err).to.be.not.exists()
+      // wait until server is ready
+      timers.setTimeout(function() {
+        const nats = Nats.connect()
+        natssInstance = NatsStreaming.connect(clusterId, clientId)
+        hemera = new Hemera(nats, {
+          logLevel: 'debug'
+        })
+        hemera.use(HemeraNatsStreaming, {
+          natssInstance
+        })
+        hemera.ready(() => hemera.transport.flush(done))
+      }, 250)
+    })
   })
 
   after(function() {
@@ -77,9 +71,7 @@ describe('Hemera-nats-streaming', function() {
       })
     } catch (err) {
       expect(err).to.be.exists()
-      expect(err.message).to.be.equals(
-        "Subject 'string' can only be subscribed once on this client"
-      )
+      expect(err.message).to.be.equals("Subject 'string' can only be subscribed once on this client")
     }
   })
 

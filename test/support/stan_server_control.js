@@ -2,11 +2,10 @@
 
 var spawn = require('child_process').spawn,
   net = require('net'),
-  os = require('os')
+  os = require('os'),
+  path = require('path')
 
-var SERVER = process.env.TRAVIS
-  ? 'nats-streaming-server/nats-streaming-server'
-  : 'nats-streaming-server'
+var SERVER = process.env.TRAVIS ? 'nats-streaming-server/nats-streaming-server' : 'nats-streaming-server'
 var LOG_DIR = process.env.TRAVIS ? 'nats-streaming-server/logs/' : os.tmpdir()
 var DEFAULT_PORT = 4222
 
@@ -18,13 +17,7 @@ exports.start_server = function(port, opt_flags, done) {
     done = opt_flags
     opt_flags = null
   }
-  var flags = [
-    '-p',
-    port,
-    '-SDV',
-    '-log',
-    LOG_DIR + 'stan_log_' + port + '.log'
-  ]
+  var flags = ['-p', port, '-SDV', '-log', path.join(LOG_DIR, 'stan_log_' + port + '.log')]
 
   if (opt_flags) {
     flags = flags.concat(opt_flags)
@@ -82,31 +75,20 @@ exports.start_server = function(port, opt_flags, done) {
 
     // Wait for next try..
     socket.on('error', function(error) {
-      finish(
-        new Error(
-          'Problem connecting to server on port: ' + port + ' (' + error + ')'
-        )
-      )
+      finish(new Error('Problem connecting to server on port: ' + port + ' (' + error + ')'))
     })
   }, delta)
 
   // Other way to catch another server running.
   server.on('exit', function(code, signal) {
     if (code === 1) {
-      finish(
-        new Error(
-          'Server exited with bad code, already running? (' +
-            code +
-            ' / ' +
-            signal +
-            ')'
-        )
-      )
+      finish(new Error('Server exited with bad code, already running? (' + code + ' / ' + signal + ')'))
     }
   })
 
   // Server does not exist..
   server.stderr.on('data', function(data) {
+    console.log(data.toString())
     if (/^execvp\(\)/.test(data)) {
       clearInterval(timer)
       finish(new Error("Can't find the " + SERVER))
